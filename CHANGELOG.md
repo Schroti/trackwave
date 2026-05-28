@@ -1,0 +1,2 @@
+- Added initial Trackwave implementation with React frontend, Spotify BFF backend, and single-container Docker deployment setup.
+- Added Deezer-first provider support with optional Spotify fallback and provider-neutral API/domain fields.

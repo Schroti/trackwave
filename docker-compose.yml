@@ -1,0 +1,20 @@
+services:
+  trackwave:
+    build: .
+    container_name: trackwave
+    ports:
+      - "8787:8787"
+    environment:
+      MUSIC_PROVIDER_DEFAULT: ${MUSIC_PROVIDER_DEFAULT:-deezer}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
+      SPOTIFY_MARKET: ${SPOTIFY_MARKET:-DE}
+      PORT: 8787
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
