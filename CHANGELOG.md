@@ -6,3 +6,4 @@
 - Improved Deezer date correction by additionally resolving older same-title track occurrences via artist track search when no album-track backfill is available.
 - Fixed intermittent Deezer crashes by handling API error payloads and non-array data responses defensively instead of iterating unchecked `data.data`.
 - Added persistent SQLite-backed Deezer response caching with stale fallback on quota errors to reduce API pressure and keep release data available.
+- Fixed delayed visibility of newly released Deezer titles by enforcing a short freshness window for artist album list cache while keeping stale fallback for quota errors.

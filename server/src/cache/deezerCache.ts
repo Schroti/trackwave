@@ -5,6 +5,7 @@ import { DatabaseSync } from 'node:sqlite'
 interface CacheRow {
   payload: string
   expires_at: number
+  created_at: number
 }
 
 const cacheEnabled = process.env.DEEZER_CACHE_ENABLED !== 'false'
@@ -58,10 +59,10 @@ function ensureDb(): DatabaseSync | null {
   `)
 
   selectFreshStatement = db.prepare(
-    'SELECT payload, expires_at FROM deezer_cache WHERE cache_key = ? AND expires_at > ?',
+    'SELECT payload, expires_at, created_at FROM deezer_cache WHERE cache_key = ? AND expires_at > ?',
   ) as typeof selectFreshStatement
   selectAnyStatement = db.prepare(
-    'SELECT payload, expires_at FROM deezer_cache WHERE cache_key = ?',
+    'SELECT payload, expires_at, created_at FROM deezer_cache WHERE cache_key = ?',
   ) as typeof selectAnyStatement
   upsertStatement = db.prepare(
     `INSERT INTO deezer_cache (cache_key, payload, expires_at, created_at)
@@ -88,12 +89,19 @@ function parsePayload<T>(row: CacheRow | undefined): T | undefined {
   }
 }
 
-export function getDeezerCachedPayload<T>(cacheKey: string): T | undefined {
+export function getDeezerCachedPayload<T>(cacheKey: string, maxAgeMs?: number): T | undefined {
   if (!ensureDb() || !selectFreshStatement) {
     return undefined
   }
 
-  return parsePayload<T>(selectFreshStatement.get(cacheKey, Date.now()))
+  const now = Date.now()
+  const row = selectFreshStatement.get(cacheKey, now)
+
+  if (maxAgeMs !== undefined && row && now - row.created_at > maxAgeMs) {
+    return undefined
+  }
+
+  return parsePayload<T>(row)
 }
 
 export function getDeezerStalePayload<T>(cacheKey: string): T | undefined {

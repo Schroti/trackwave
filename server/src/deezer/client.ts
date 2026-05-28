@@ -8,6 +8,7 @@ import {
 
 const DETAIL_CONCURRENCY = 5
 const DEFAULT_DEEZER_CACHE_TTL_MS = Number(process.env.DEEZER_CACHE_TTL_MS ?? 6 * 60 * 60 * 1000)
+const ARTIST_ALBUMS_MAX_AGE_MS = Number(process.env.DEEZER_ARTIST_ALBUMS_MAX_AGE_MS ?? 5 * 60 * 1000)
 
 interface DeezerSearchResponse {
   data: Array<{
@@ -188,9 +189,18 @@ function normalizeRecordType(value: string | undefined): 'album' | 'single' | 'c
   return 'compilation'
 }
 
+function getFreshCacheMaxAge(path: string): number | undefined {
+  if (/^\/artist\/\d+\/albums\?/.test(path)) {
+    return ARTIST_ALBUMS_MAX_AGE_MS
+  }
+
+  return undefined
+}
+
 async function deezerFetch<T>(path: string): Promise<T> {
   const cacheKey = path
-  const cachedPayload = getDeezerCachedPayload<T>(cacheKey)
+  const freshMaxAge = getFreshCacheMaxAge(path)
+  const cachedPayload = getDeezerCachedPayload<T>(cacheKey, freshMaxAge)
 
   if (cachedPayload) {
     return cachedPayload

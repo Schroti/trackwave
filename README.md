@@ -36,3 +36,4 @@ Trackwave is a release tracker for followed artists.
 - Spotify secrets stay on the server side only and are optional.
 - Browser talks only to `/api` routes exposed by the BFF.
 - Deezer API responses are cached in a persistent SQLite file (`CACHE_DB_PATH`) to reduce quota pressure and survive restarts.
+- Artist album lists use a short cache freshness window (`DEEZER_ARTIST_ALBUMS_MAX_AGE_MS`, default 5 minutes) so brand-new releases appear quickly.
