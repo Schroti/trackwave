@@ -5,3 +5,4 @@
 - Fixed misleading Deezer single dates by backfilling release dates from earlier album/EP track appearances with the same title.
 - Improved Deezer date correction by additionally resolving older same-title track occurrences via artist track search when no album-track backfill is available.
 - Fixed intermittent Deezer crashes by handling API error payloads and non-array data responses defensively instead of iterating unchecked `data.data`.
+- Added persistent SQLite-backed Deezer response caching with stale fallback on quota errors to reduce API pressure and keep release data available.

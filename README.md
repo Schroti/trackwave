@@ -35,3 +35,4 @@ Trackwave is a release tracker for followed artists.
 - Deezer is used as default provider to avoid premium-account dependency.
 - Spotify secrets stay on the server side only and are optional.
 - Browser talks only to `/api` routes exposed by the BFF.
+- Deezer API responses are cached in a persistent SQLite file (`CACHE_DB_PATH`) to reduce quota pressure and survive restarts.

@@ -1,7 +1,13 @@
 const DEEZER_API_BASE = 'https://api.deezer.com'
 import pLimit from 'p-limit'
+import {
+  getDeezerCachedPayload,
+  getDeezerStalePayload,
+  setDeezerCachedPayload,
+} from '../cache/deezerCache.js'
 
 const DETAIL_CONCURRENCY = 5
+const DEFAULT_DEEZER_CACHE_TTL_MS = Number(process.env.DEEZER_CACHE_TTL_MS ?? 6 * 60 * 60 * 1000)
 
 interface DeezerSearchResponse {
   data: Array<{
@@ -183,9 +189,22 @@ function normalizeRecordType(value: string | undefined): 'album' | 'single' | 'c
 }
 
 async function deezerFetch<T>(path: string): Promise<T> {
+  const cacheKey = path
+  const cachedPayload = getDeezerCachedPayload<T>(cacheKey)
+
+  if (cachedPayload) {
+    return cachedPayload
+  }
+
   const response = await fetch(`${DEEZER_API_BASE}${path}`)
 
   if (!response.ok) {
+    const stalePayload = getDeezerStalePayload<T>(cacheKey)
+
+    if (stalePayload) {
+      return stalePayload
+    }
+
     const details = await response.text()
     throw new Error(`Deezer API error ${response.status}: ${details}`)
   }
@@ -193,10 +212,20 @@ async function deezerFetch<T>(path: string): Promise<T> {
   const payload = (await response.json()) as T & DeezerApiErrorPayload
 
   if (payload?.error) {
+    if (payload.error.code === 4) {
+      const stalePayload = getDeezerStalePayload<T>(cacheKey)
+
+      if (stalePayload) {
+        return stalePayload
+      }
+    }
+
     const code = payload.error.code ?? 'unknown'
     const message = payload.error.message ?? 'Unknown Deezer API error'
     throw new Error(`Deezer API error ${code}: ${message}`)
   }
+
+  setDeezerCachedPayload(cacheKey, payload, DEFAULT_DEEZER_CACHE_TTL_MS)
 
   return payload
 }

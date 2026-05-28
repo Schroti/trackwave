@@ -6,11 +6,15 @@ services:
       - "8787:8787"
     environment:
       MUSIC_PROVIDER_DEFAULT: ${MUSIC_PROVIDER_DEFAULT:-deezer}
+      DEEZER_CACHE_TTL_MS: ${DEEZER_CACHE_TTL_MS:-21600000}
+      CACHE_DB_PATH: ${CACHE_DB_PATH:-/app/data/trackwave-cache.db}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
       SPOTIFY_MARKET: ${SPOTIFY_MARKET:-DE}
       PORT: 8787
       NODE_ENV: production
+    volumes:
+      - trackwave_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/api/health"]
@@ -18,3 +22,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+volumes:
+  trackwave_data:
