@@ -5,6 +5,7 @@ export const translations = {
       dashboard: 'Dashboard',
       search: 'Search',
       artists: 'My Artists',
+      provider: 'Provider',
     },
     dashboard: {
       title: 'Latest Releases',
@@ -42,6 +43,11 @@ export const translations = {
       compilation: 'Compilation',
       tracks: 'tracks',
       openSpotify: 'Open on Spotify',
+      openDeezer: 'Open on Deezer',
+    },
+    provider: {
+      spotify: 'Spotify',
+      deezer: 'Deezer',
     },
     actions: {
       follow: 'Follow',
@@ -50,6 +56,10 @@ export const translations = {
     language: {
       switchToGerman: 'Deutsch',
       switchToEnglish: 'English',
+    },
+    theme: {
+      switchToDark: 'Dark mode',
+      switchToLight: 'Light mode',
     },
     errors: {
       generic: 'Something went wrong. Please try again.',
@@ -61,6 +71,7 @@ export const translations = {
       dashboard: 'Dashboard',
       search: 'Suche',
       artists: 'Meine Artists',
+      provider: 'Provider',
     },
     dashboard: {
       title: 'Neueste Releases',
@@ -98,6 +109,11 @@ export const translations = {
       compilation: 'Kompilation',
       tracks: 'Tracks',
       openSpotify: 'Auf Spotify öffnen',
+      openDeezer: 'Auf Deezer öffnen',
+    },
+    provider: {
+      spotify: 'Spotify',
+      deezer: 'Deezer',
     },
     actions: {
       follow: 'Folgen',
@@ -106,6 +122,10 @@ export const translations = {
     language: {
       switchToGerman: 'Deutsch',
       switchToEnglish: 'English',
+    },
+    theme: {
+      switchToDark: 'Darkmode',
+      switchToLight: 'Lightmode',
     },
     errors: {
       generic: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',

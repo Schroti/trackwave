@@ -2,7 +2,7 @@ import cors from 'cors'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import spotifyRoutes from './routes/spotify.js'
+import musicRoutes from './routes/music.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 8787)
@@ -15,7 +15,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
-app.use('/api', spotifyRoutes)
+app.use('/api', musicRoutes)
 
 if (isProduction) {
   const __filename = fileURLToPath(import.meta.url)

@@ -1,4 +1,7 @@
 const DEEZER_API_BASE = 'https://api.deezer.com'
+import pLimit from 'p-limit'
+
+const DETAIL_CONCURRENCY = 5
 
 interface DeezerSearchResponse {
   data: Array<{
@@ -29,6 +32,33 @@ interface DeezerArtistAlbumsResponse {
       name: string
     }
   }>
+}
+
+interface DeezerArtistResponse {
+  id: number
+  name: string
+  link: string
+  picture?: string
+  picture_medium?: string
+  picture_big?: string
+  picture_xl?: string
+}
+
+interface DeezerAlbumDetailResponse {
+  id: number
+  title: string
+  link: string
+  cover?: string
+  cover_medium?: string
+  cover_big?: string
+  cover_xl?: string
+  release_date?: string
+  record_type?: string
+  nb_tracks?: number
+  artist?: {
+    id: number
+    name: string
+  }
 }
 
 function parseReleaseDatePrecision(date: string | undefined): 'year' | 'month' | 'day' {
@@ -88,20 +118,44 @@ export async function searchDeezerArtists(query: string, limit: number) {
 }
 
 export async function fetchDeezerArtistReleases(artistId: string, limit: number) {
+  const concurrency = pLimit(DETAIL_CONCURRENCY)
+
+  const artist = await deezerFetch<DeezerArtistResponse>(`/artist/${encodeURIComponent(artistId)}`)
   const data = await deezerFetch<DeezerArtistAlbumsResponse>(
     `/artist/${encodeURIComponent(artistId)}/albums?limit=${limit}`,
   )
 
-  return data.data.map((item) => ({
-    id: String(item.id),
-    artistId: String(item.artist?.id ?? artistId),
-    artistName: item.artist?.name ?? 'Unknown artist',
-    title: item.title,
-    type: normalizeRecordType(item.record_type),
-    releaseDate: item.release_date ?? '1970-01-01',
-    releaseDatePrecision: parseReleaseDatePrecision(item.release_date),
-    coverUrl: item.cover_xl ?? item.cover_big ?? item.cover_medium ?? item.cover ?? '',
-    externalUrl: item.link,
-    totalTracks: item.nb_tracks ?? 0,
-  }))
+  const releases = await Promise.all(
+    data.data.map((item) =>
+      concurrency(async () => {
+        const details = await deezerFetch<DeezerAlbumDetailResponse>(`/album/${item.id}`)
+
+        const artistName = details.artist?.name ?? item.artist?.name ?? artist.name
+
+        return {
+          id: String(item.id),
+          artistId: String(details.artist?.id ?? item.artist?.id ?? artist.id ?? artistId),
+          artistName,
+          title: details.title || item.title,
+          type: normalizeRecordType(details.record_type ?? item.record_type),
+          releaseDate: details.release_date ?? item.release_date ?? '1970-01-01',
+          releaseDatePrecision: parseReleaseDatePrecision(details.release_date ?? item.release_date),
+          coverUrl:
+            details.cover_xl ??
+            details.cover_big ??
+            details.cover_medium ??
+            details.cover ??
+            item.cover_xl ??
+            item.cover_big ??
+            item.cover_medium ??
+            item.cover ??
+            '',
+          externalUrl: details.link || item.link,
+          totalTracks: details.nb_tracks ?? item.nb_tracks ?? 0,
+        }
+      }),
+    ),
+  )
+
+  return releases
 }

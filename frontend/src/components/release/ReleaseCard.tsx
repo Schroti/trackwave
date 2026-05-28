@@ -6,6 +6,16 @@ interface ReleaseCardProps {
   release: Release
 }
 
+function buildSearchLink(provider: 'spotify' | 'deezer', release: Release): string {
+  const query = encodeURIComponent(`${release.title} ${release.artistName}`)
+
+  if (provider === 'spotify') {
+    return `https://open.spotify.com/search/${query}`
+  }
+
+  return `https://www.deezer.com/search/${query}`
+}
+
 function normalizeReleaseDate(value: string, precision: Release['releaseDatePrecision']): string {
   if (precision === 'year') {
     return `${value}-01-01`
@@ -21,6 +31,8 @@ function normalizeReleaseDate(value: string, precision: Release['releaseDatePrec
 export function ReleaseCard({ release }: ReleaseCardProps) {
   const { t } = useLanguage()
   const date = new Date(normalizeReleaseDate(release.releaseDate, release.releaseDatePrecision))
+  const deezerUrl = release.provider === 'deezer' ? release.externalUrl : buildSearchLink('deezer', release)
+  const spotifyUrl = release.provider === 'spotify' ? release.externalUrl : buildSearchLink('spotify', release)
 
   return (
     <article className="glass-panel rounded-2xl p-4">
@@ -40,14 +52,28 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
         <p className="mt-1 text-xs text-slate-500">
           {release.totalTracks} {t('release.tracks')}
         </p>
-        <a
-          href={release.externalUrl || release.spotifyUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-flex rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700"
-        >
-          {t('release.openSpotify')}
-        </a>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href={spotifyUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t('release.openSpotify')}
+            title={t('release.openSpotify')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+          >
+            <img src="/icons/spotify.svg" alt="" aria-hidden="true" className="h-5 w-5" />
+          </a>
+          <a
+            href={deezerUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t('release.openDeezer')}
+            title={t('release.openDeezer')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-700 text-white hover:bg-cyan-600"
+          >
+            <img src="/icons/deezer.svg" alt="" aria-hidden="true" className="h-5 w-5" />
+          </a>
+        </div>
       </div>
     </article>
   )

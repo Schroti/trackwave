@@ -23,6 +23,15 @@ body {
     radial-gradient(circle at 15% 20%, rgba(247, 203, 117, 0.35), transparent 40%),
     radial-gradient(circle at 85% 10%, rgba(118, 193, 230, 0.28), transparent 45%),
     #f5f3ee;
+  color: #13232f;
+}
+
+html.theme-dark body {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(19, 85, 120, 0.34), transparent 45%),
+    radial-gradient(circle at 88% 8%, rgba(244, 163, 97, 0.28), transparent 43%),
+    #0f1720;
+  color: #e6eef5;
 }
 
 a {
@@ -40,7 +49,47 @@ a {
   backdrop-filter: blur(6px);
 }
 
+html.theme-dark .glass-panel {
+  background: rgba(17, 27, 38, 0.84);
+  border: 1px solid rgba(130, 154, 177, 0.2);
+}
+
 .page-title {
   font-family: "Sora", "Segoe UI", sans-serif;
   letter-spacing: -0.02em;
+}
+
+html.theme-dark .dark-surface-navbar {
+  background: rgba(12, 20, 31, 0.92);
+  border-color: rgba(128, 151, 174, 0.35);
+}
+
+html.theme-dark .dark-text-primary {
+  color: #e6eef5 !important;
+}
+
+html.theme-dark .dark-hover-chip:hover {
+  background: rgba(85, 112, 137, 0.28) !important;
+}
+
+html.theme-dark .dark-border-primary {
+  border-color: rgba(130, 154, 177, 0.55) !important;
+}
+
+html.theme-dark .text-slate-900,
+html.theme-dark .text-slate-800,
+html.theme-dark .text-slate-700,
+html.theme-dark .text-slate-600,
+html.theme-dark .text-slate-500 {
+  color: #dbe8f4 !important;
+}
+
+html.theme-dark .bg-slate-100,
+html.theme-dark .bg-slate-200 {
+  background-color: rgba(70, 94, 118, 0.35) !important;
+}
+
+html.theme-dark .border-slate-300,
+html.theme-dark .border-slate-200 {
+  border-color: rgba(130, 154, 177, 0.55) !important;
 }

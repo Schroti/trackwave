@@ -51,7 +51,7 @@ export function useDashboardReleases() {
     }
 
     const tasks = followedArtists.map((artist) => async () => {
-      const response = await getArtistReleases(artist.id)
+      const response = await getArtistReleases(artist.id, 10, artist.provider)
       return response.releases
     })
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { searchArtists } from '../services/api'
+import { useArtistStore } from '../store/useArtistStore'
 import type { Artist } from '../types'
 import { useDebouncedValue } from './useDebouncedValue'
 
@@ -11,6 +12,7 @@ interface UseArtistSearchResult {
 
 export function useArtistSearch(query: string): UseArtistSearchResult {
   const debouncedQuery = useDebouncedValue(query.trim())
+  const selectedProvider = useArtistStore((state) => state.selectedProvider)
   const [artists, setArtists] = useState<Artist[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +30,7 @@ export function useArtistSearch(query: string): UseArtistSearchResult {
       try {
         setIsLoading(true)
         setError(null)
-        const result = await searchArtists(debouncedQuery)
+        const result = await searchArtists(debouncedQuery, 8, selectedProvider)
 
         if (active) {
           setArtists(result)
@@ -50,7 +52,7 @@ export function useArtistSearch(query: string): UseArtistSearchResult {
     return () => {
       active = false
     }
-  }, [debouncedQuery])
+  }, [debouncedQuery, selectedProvider])
 
   return { artists, isLoading, error }
 }
