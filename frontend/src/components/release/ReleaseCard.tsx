@@ -33,15 +33,22 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
   const date = new Date(normalizeReleaseDate(release.releaseDate, release.releaseDatePrecision))
   const deezerUrl = release.provider === 'deezer' ? release.externalUrl : buildSearchLink('deezer', release)
   const spotifyUrl = release.provider === 'spotify' ? release.externalUrl : buildSearchLink('spotify', release)
+  const hasCover = Boolean(release.coverUrl)
 
   return (
     <article className="glass-panel rounded-2xl p-4">
-      <img
-        src={release.coverUrl}
-        alt={release.title}
-        className="h-48 w-full rounded-xl object-cover"
-        loading="lazy"
-      />
+      {hasCover ? (
+        <img
+          src={release.coverUrl}
+          alt={release.title}
+          className="h-48 w-full rounded-xl object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex h-48 w-full items-center justify-center rounded-xl bg-slate-200 text-sm font-semibold text-slate-600">
+          {release.title}
+        </div>
+      )}
       <div className="mt-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="truncate text-lg font-semibold text-slate-900">{release.title}</h3>

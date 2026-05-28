@@ -54,6 +54,7 @@ interface DeezerArtistAlbumsResponse {
     cover_medium?: string
     cover_big?: string
     cover_xl?: string
+    md5_image?: string
     release_date?: string
     record_type?: string
     nb_tracks?: number
@@ -82,6 +83,7 @@ interface DeezerAlbumDetailResponse {
   cover_medium?: string
   cover_big?: string
   cover_xl?: string
+  md5_image?: string
   release_date?: string
   record_type?: string
   nb_tracks?: number
@@ -187,6 +189,36 @@ function normalizeRecordType(value: string | undefined): 'album' | 'single' | 'c
   }
 
   return 'compilation'
+}
+
+function buildDeezerCoverUrl(md5: string | undefined, size = 1000): string {
+  if (!md5) {
+    return ''
+  }
+
+  return `https://e-cdns-images.dzcdn.net/images/cover/${md5}/${size}x${size}-000000-80-0-0.jpg`
+}
+
+function resolveCoverUrl(
+  details: Pick<DeezerAlbumDetailResponse, 'cover_xl' | 'cover_big' | 'cover_medium' | 'cover' | 'md5_image'>,
+  item: Pick<
+    DeezerArtistAlbumsResponse['data'][number],
+    'cover_xl' | 'cover_big' | 'cover_medium' | 'cover' | 'md5_image'
+  >,
+): string {
+  return (
+    details.cover_xl ||
+    details.cover_big ||
+    details.cover_medium ||
+    details.cover ||
+    buildDeezerCoverUrl(details.md5_image) ||
+    item.cover_xl ||
+    item.cover_big ||
+    item.cover_medium ||
+    item.cover ||
+    buildDeezerCoverUrl(item.md5_image) ||
+    ''
+  )
 }
 
 function getFreshCacheMaxAge(path: string): number | undefined {
@@ -349,16 +381,7 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number)
           type: releaseType,
           releaseDate: effectiveReleaseDate,
           releaseDatePrecision: parseReleaseDatePrecision(effectiveReleaseDate),
-          coverUrl:
-            details.cover_xl ??
-            details.cover_big ??
-            details.cover_medium ??
-            details.cover ??
-            item.cover_xl ??
-            item.cover_big ??
-            item.cover_medium ??
-            item.cover ??
-            '',
+          coverUrl: resolveCoverUrl(details, item),
           externalUrl: details.link || item.link,
           totalTracks: details.nb_tracks ?? item.nb_tracks ?? 0,
         }

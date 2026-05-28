@@ -7,3 +7,4 @@
 - Fixed intermittent Deezer crashes by handling API error payloads and non-array data responses defensively instead of iterating unchecked `data.data`.
 - Added persistent SQLite-backed Deezer response caching with stale fallback on quota errors to reduce API pressure and keep release data available.
 - Fixed delayed visibility of newly released Deezer titles by enforcing a short freshness window for artist album list cache while keeping stale fallback for quota errors.
+- Fixed missing release artwork by generating Deezer cover URLs from `md5_image` when cover fields are empty and by rendering a safe UI placeholder when no image is available.
