@@ -1,3 +1,7 @@
 - Added initial Trackwave implementation with React frontend, Spotify BFF backend, and single-container Docker deployment setup.
 - Added Deezer-first provider support with optional Spotify fallback and provider-neutral API/domain fields.
 - Added provider-aware dashboard loading, dual Deezer/Spotify release actions, improved dark-mode contrast, Deezer album detail enrichment, and neutralized API route naming.
+- Fixed Deezer release selection to include newer singles/EPs consistently by sorting a larger candidate set by release date before applying API limits.
+- Fixed misleading Deezer single dates by backfilling release dates from earlier album/EP track appearances with the same title.
+- Improved Deezer date correction by additionally resolving older same-title track occurrences via artist track search when no album-track backfill is available.
+- Fixed intermittent Deezer crashes by handling API error payloads and non-array data responses defensively instead of iterating unchecked `data.data`.
