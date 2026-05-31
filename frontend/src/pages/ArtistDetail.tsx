@@ -8,7 +8,7 @@ import { useArtistDetail } from '../hooks/useArtistDetail'
 export function ArtistDetail() {
   const { id } = useParams<{ id: string }>()
   const { t } = useLanguage()
-  const { artist, provider, groupedReleases, isFollowing, isLoading, error, refresh, toggleFollow } =
+  const { artist, provider, groupedReleases, isFollowing, isLoading, isFollowActionLoading, error, refresh, toggleFollow } =
     useArtistDetail(id)
 
   if (!id) {
@@ -45,7 +45,11 @@ export function ArtistDetail() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <FollowButton isFollowing={isFollowing} onClick={() => void toggleFollow()} />
+            <FollowButton
+              isFollowing={isFollowing}
+              isLoading={isFollowActionLoading}
+              onClick={() => void toggleFollow()}
+            />
             <button
               type="button"
               onClick={() => void refresh()}

@@ -32,6 +32,7 @@ export function useArtistDetail(artistId: string | undefined) {
   const [artist, setArtist] = useState<Artist | null>(followedArtist ?? null)
   const [releases, setReleases] = useState<Release[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isFollowActionLoading, setIsFollowActionLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -90,16 +91,22 @@ export function useArtistDetail(artistId: string | undefined) {
   }, [releases])
 
   const toggleFollow = async () => {
-    if (!artistId || !artist) {
+    if (!artistId || !artist || isFollowActionLoading) {
       return
     }
 
-    if (isFollowing) {
-      await unfollowArtist(artistId)
-      return
-    }
+    setIsFollowActionLoading(true)
 
-    await followArtist(artist)
+    try {
+      if (isFollowing) {
+        await unfollowArtist(artistId)
+        return
+      }
+
+      await followArtist(artist)
+    } finally {
+      setIsFollowActionLoading(false)
+    }
   }
 
   return {
@@ -109,6 +116,7 @@ export function useArtistDetail(artistId: string | undefined) {
     groupedReleases,
     isFollowing,
     isLoading,
+    isFollowActionLoading,
     error,
     refresh,
     toggleFollow,

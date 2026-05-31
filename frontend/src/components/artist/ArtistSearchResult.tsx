@@ -53,7 +53,7 @@ export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
           <p className="truncate text-sm text-slate-600">{artist.genres.join(', ') || '—'}</p>
         </div>
 
-        <FollowButton isFollowing={isFollowing} onClick={() => void handleToggle()} />
+        <FollowButton isFollowing={isFollowing} isLoading={isSubmitting} onClick={() => void handleToggle()} />
       </div>
     </article>
   )
