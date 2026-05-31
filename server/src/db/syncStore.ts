@@ -183,7 +183,12 @@ export function replaceArtistReleases(provider: ProviderId, artistId: string, re
 
     const insertStatement = database.prepare(
       `INSERT INTO artist_releases (provider, release_id, artist_id, release_date, payload_json, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(provider, release_id) DO UPDATE SET
+         artist_id = excluded.artist_id,
+         release_date = excluded.release_date,
+         payload_json = excluded.payload_json,
+         updated_at = excluded.updated_at`,
     )
 
     for (const release of releases) {
