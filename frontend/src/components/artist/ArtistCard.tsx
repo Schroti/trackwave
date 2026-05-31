@@ -36,7 +36,7 @@ export function ArtistCard({ artist }: ArtistCardProps) {
           </Link>
         </div>
 
-        <FollowButton isFollowing onClick={() => unfollowArtist(artist.id)} />
+        <FollowButton isFollowing onClick={() => void unfollowArtist(artist.id)} />
       </div>
     </article>
   )

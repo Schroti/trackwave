@@ -45,7 +45,7 @@ export function ArtistDetail() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <FollowButton isFollowing={isFollowing} onClick={toggleFollow} />
+            <FollowButton isFollowing={isFollowing} onClick={() => void toggleFollow()} />
             <button
               type="button"
               onClick={() => void refresh()}

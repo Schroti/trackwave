@@ -2,6 +2,10 @@ import type { Artist, ArtistDetailResponse, ArtistReleasesResponse, SearchArtist
 
 export type MusicProvider = 'spotify' | 'deezer'
 
+interface FollowArtistResponse {
+  artist: Artist
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const message = await response.text()
@@ -58,4 +62,35 @@ export async function getArtistDetail(artistId: string, provider?: MusicProvider
   const endpoint = query ? `/api/artists/${artistId}/detail?${query}` : `/api/artists/${artistId}/detail`
   const response = await fetch(endpoint)
   return parseResponse<ArtistDetailResponse>(response)
+}
+
+export async function followArtist(artist: Artist): Promise<Artist> {
+  const response = await fetch('/api/artists/follow', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(artist),
+  })
+
+  const data = await parseResponse<FollowArtistResponse>(response)
+  return data.artist
+}
+
+export async function unfollowArtist(artistId: string, provider: MusicProvider): Promise<void> {
+  const params = new URLSearchParams({ provider })
+  const response = await fetch(`/api/artists/${artistId}/follow?${params.toString()}`, {
+    method: 'DELETE',
+  })
+
+  await parseResponse<{ unfollowed: boolean }>(response)
+}
+
+export async function refreshArtist(artistId: string, provider: MusicProvider): Promise<void> {
+  const params = new URLSearchParams({ provider })
+  const response = await fetch(`/api/artists/${artistId}/refresh?${params.toString()}`, {
+    method: 'POST',
+  })
+
+  await parseResponse<{ syncedAt: string }>(response)
 }

@@ -3,6 +3,7 @@ import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import musicRoutes from './routes/music.js'
+import { startNightlyScheduler } from './sync/nightlyScheduler.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 8787)
@@ -29,6 +30,8 @@ if (isProduction) {
 }
 
 app.listen(port, () => {
+  startNightlyScheduler()
+
   // eslint-disable-next-line no-console
   console.log(`Trackwave server listening on port ${port}`)
 })

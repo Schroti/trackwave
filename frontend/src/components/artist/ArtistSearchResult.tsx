@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useArtistStore } from '../../store/useArtistStore'
 import type { Artist } from '../../types'
 import { FollowButton } from '../ui/FollowButton'
@@ -10,14 +11,25 @@ export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
   const followArtist = useArtistStore((state) => state.followArtist)
   const unfollowArtist = useArtistStore((state) => state.unfollowArtist)
   const isFollowing = useArtistStore((state) => state.isFollowing(artist.id))
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleToggle = () => {
-    if (isFollowing) {
-      unfollowArtist(artist.id)
+  const handleToggle = async () => {
+    if (isSubmitting) {
       return
     }
 
-    followArtist(artist)
+    setIsSubmitting(true)
+
+    try {
+      if (isFollowing) {
+        await unfollowArtist(artist.id)
+        return
+      }
+
+      await followArtist(artist)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -41,7 +53,7 @@ export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
           <p className="truncate text-sm text-slate-600">{artist.genres.join(', ') || '—'}</p>
         </div>
 
-        <FollowButton isFollowing={isFollowing} onClick={handleToggle} />
+        <FollowButton isFollowing={isFollowing} onClick={() => void handleToggle()} />
       </div>
     </article>
   )

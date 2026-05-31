@@ -1,3 +1,4 @@
+- Added server-persisted follow sync: newly followed artists now run an immediate full detail+release sync, while existing followed artists are refreshed nightly at 00:15 Europe/Berlin via scheduler.
 - Added initial Trackwave implementation with React frontend, Spotify BFF backend, and single-container Docker deployment setup.
 - Added Deezer-first provider support with optional Spotify fallback and provider-neutral API/domain fields.
 - Added provider-aware dashboard loading, dual Deezer/Spotify release actions, improved dark-mode contrast, Deezer album detail enrichment, and neutralized API route naming.

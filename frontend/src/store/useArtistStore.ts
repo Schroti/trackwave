@@ -1,14 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Artist } from '../types'
-import type { MusicProvider } from '../services/api'
+import { followArtist as followArtistRequest, type MusicProvider, unfollowArtist as unfollowArtistRequest } from '../services/api'
 
 interface ArtistStoreState {
   followedArtists: Artist[]
   selectedProvider: MusicProvider
   monthsFilter: number
-  followArtist: (artist: Artist) => void
-  unfollowArtist: (artistId: string) => void
+  followArtist: (artist: Artist) => Promise<void>
+  unfollowArtist: (artistId: string) => Promise<void>
   isFollowing: (artistId: string) => boolean
   setMonthsFilter: (months: number) => void
   setSelectedProvider: (provider: MusicProvider) => void
@@ -20,27 +20,32 @@ export const useArtistStore = create<ArtistStoreState>()(
       followedArtists: [],
       selectedProvider: 'deezer',
       monthsFilter: 6,
-      followArtist: (artist) => {
+      followArtist: async (artist) => {
         const exists = get().followedArtists.some((entry) => entry.id === artist.id)
 
         if (exists) {
           return
         }
 
+        const persistedArtist = await followArtistRequest(artist)
+
         set((state) => ({
           followedArtists: [
             ...state.followedArtists,
             {
-              ...artist,
-              provider: artist.provider,
-              externalUrl: artist.externalUrl,
-              spotifyUrl: artist.spotifyUrl,
-              followedAt: new Date().toISOString(),
+              ...persistedArtist,
+              followedAt: persistedArtist.followedAt || new Date().toISOString(),
             },
           ],
         }))
       },
-      unfollowArtist: (artistId) => {
+      unfollowArtist: async (artistId) => {
+        const artist = get().followedArtists.find((entry) => entry.id === artistId)
+
+        if (artist) {
+          await unfollowArtistRequest(artistId, artist.provider)
+        }
+
         set((state) => ({
           followedArtists: state.followedArtists.filter((artist) => artist.id !== artistId),
         }))

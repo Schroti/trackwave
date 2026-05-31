@@ -1,10 +1,13 @@
+export type ProviderId = 'spotify' | 'deezer'
+export type SyncStatus = 'idle' | 'syncing' | 'ok' | 'error'
+
 export interface Artist {
   id: string
   name: string
   imageUrl?: string
   genres: string[]
   followedAt: string
-  provider: 'spotify' | 'deezer'
+  provider: ProviderId
   externalUrl: string
   spotifyUrl: string
 }
@@ -21,7 +24,7 @@ export interface Release {
   releaseDate: string
   releaseDatePrecision: ReleaseDatePrecision
   coverUrl: string
-  provider: 'spotify' | 'deezer'
+  provider: ProviderId
   externalUrl: string
   spotifyUrl: string
   totalTracks: number

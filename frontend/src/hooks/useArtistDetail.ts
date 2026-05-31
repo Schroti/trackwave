@@ -89,17 +89,17 @@ export function useArtistDetail(artistId: string | undefined) {
     return { albums, singles, compilations }
   }, [releases])
 
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
     if (!artistId || !artist) {
       return
     }
 
     if (isFollowing) {
-      unfollowArtist(artistId)
+      await unfollowArtist(artistId)
       return
     }
 
-    followArtist(artist)
+    await followArtist(artist)
   }
 
   return {
