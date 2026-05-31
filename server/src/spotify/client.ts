@@ -33,6 +33,7 @@ interface SpotifySearchResponse {
 }
 
 interface SpotifyArtistReleasesResponse {
+  next: string | null
   items: Array<{
     id: string
     name: string
@@ -49,6 +50,17 @@ interface SpotifyArtistReleasesResponse {
   }>
 }
 
+interface SpotifyArtistDetailResponse {
+  id: string
+  name: string
+  genres: string[]
+  images: Array<{ url: string }>
+  external_urls: { spotify: string }
+}
+
+const SPOTIFY_PAGE_LIMIT = 50
+const MAX_SPOTIFY_RELEASES = Number(process.env.SPOTIFY_MAX_RELEASES ?? 500)
+
 export async function searchSpotifyArtists(query: string, limit: number) {
   const encodedQuery = encodeURIComponent(query)
   const data = await spotifyFetch<SpotifySearchResponse>(
@@ -59,7 +71,32 @@ export async function searchSpotifyArtists(query: string, limit: number) {
 }
 
 export async function fetchSpotifyArtistReleases(artistId: string, limit: number) {
-  return spotifyFetch<SpotifyArtistReleasesResponse>(
-    `/artists/${artistId}/albums?include_groups=album,single,compilation&market=${spotifyConfig.market}&limit=${limit}`,
-  )
+  const requested = Math.min(Math.max(limit, 1), MAX_SPOTIFY_RELEASES)
+  const items: SpotifyArtistReleasesResponse['items'] = []
+  let offset = 0
+
+  while (items.length < requested) {
+    const pageLimit = Math.min(SPOTIFY_PAGE_LIMIT, requested - items.length)
+    const page = await spotifyFetch<SpotifyArtistReleasesResponse>(
+      `/artists/${artistId}/albums?include_groups=album,single,compilation&market=${spotifyConfig.market}&limit=${pageLimit}&offset=${offset}`,
+    )
+
+    items.push(...page.items)
+
+    if (!page.next || page.items.length === 0) {
+      break
+    }
+
+    offset += page.items.length
+  }
+
+  return items
+}
+
+export async function fetchAllSpotifyArtistReleases(artistId: string) {
+  return fetchSpotifyArtistReleases(artistId, MAX_SPOTIFY_RELEASES)
+}
+
+export async function fetchSpotifyArtistDetail(artistId: string) {
+  return spotifyFetch<SpotifyArtistDetailResponse>(`/artists/${artistId}`)
 }

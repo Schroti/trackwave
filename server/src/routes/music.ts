@@ -1,6 +1,15 @@
 import { Router } from 'express'
-import { fetchSpotifyArtistReleases, searchSpotifyArtists } from '../spotify/client.js'
-import { fetchDeezerArtistReleases, searchDeezerArtists } from '../deezer/client.js'
+import {
+  fetchAllSpotifyArtistReleases,
+  fetchSpotifyArtistDetail,
+  fetchSpotifyArtistReleases,
+  searchSpotifyArtists,
+} from '../spotify/client.js'
+import {
+  fetchDeezerArtistDetail,
+  fetchDeezerArtistReleases,
+  searchDeezerArtists,
+} from '../deezer/client.js'
 import type { Artist, Release } from '../types.js'
 
 const router = Router()
@@ -57,6 +66,15 @@ function toDeezerArtist(item: {
     externalUrl: item.externalUrl,
     spotifyUrl: item.externalUrl,
   }
+}
+
+function parseReleaseLimit(value: unknown): number | 'all' {
+  if (String(value ?? '').toLowerCase() === 'all') {
+    return 'all'
+  }
+
+  const numeric = Number(value ?? 10)
+  return Math.min(Math.max(numeric, 1), 50)
 }
 
 function toSpotifyRelease(
@@ -154,16 +172,16 @@ router.get('/search-artists', async (req, res) => {
 router.get('/artists/:id/releases', async (req, res) => {
   try {
     const artistId = String(req.params.id)
-    const limit = Number(req.query.limit ?? 10)
+    const limit = parseReleaseLimit(req.query.limit)
     const provider = getRequestedProvider(req.query.provider)
-    const normalizedLimit = Math.min(Math.max(limit, 1), 50)
 
     const releases =
       provider === 'spotify'
-        ? (await fetchSpotifyArtistReleases(artistId, normalizedLimit)).items.map((item) =>
-            toSpotifyRelease(item, artistId),
-          )
-        : (await fetchDeezerArtistReleases(artistId, normalizedLimit)).map(toDeezerRelease)
+        ? (limit === 'all'
+            ? await fetchAllSpotifyArtistReleases(artistId)
+            : await fetchSpotifyArtistReleases(artistId, limit)
+          ).map((item) => toSpotifyRelease(item, artistId))
+        : (await fetchDeezerArtistReleases(artistId, limit)).map(toDeezerRelease)
 
     res.json({
       provider,
@@ -173,6 +191,27 @@ router.get('/artists/:id/releases', async (req, res) => {
   } catch (error) {
     res.status(502).json({
       message: error instanceof Error ? error.message : 'Failed to fetch releases.',
+    })
+  }
+})
+
+router.get('/artists/:id/detail', async (req, res) => {
+  try {
+    const artistId = String(req.params.id)
+    const provider = getRequestedProvider(req.query.provider)
+
+    const artist =
+      provider === 'spotify'
+        ? toSpotifyArtist(await fetchSpotifyArtistDetail(artistId))
+        : toDeezerArtist(await fetchDeezerArtistDetail(artistId))
+
+    res.json({
+      provider,
+      artist,
+    })
+  } catch (error) {
+    res.status(502).json({
+      message: error instanceof Error ? error.message : 'Failed to fetch artist detail.',
     })
   }
 })

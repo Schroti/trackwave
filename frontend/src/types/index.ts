@@ -35,3 +35,8 @@ export interface ArtistReleasesResponse {
   artistId: string
   releases: Release[]
 }
+
+export interface ArtistDetailResponse {
+  provider: 'spotify' | 'deezer'
+  artist: Artist
+}

@@ -8,3 +8,4 @@
 - Added persistent SQLite-backed Deezer response caching with stale fallback on quota errors to reduce API pressure and keep release data available.
 - Fixed delayed visibility of newly released Deezer titles by enforcing a short freshness window for artist album list cache while keeping stale fallback for quota errors.
 - Fixed missing release artwork by generating Deezer cover URLs from `md5_image` when cover fields are empty and by rendering a safe UI placeholder when no image is available.
+- Added Step 2 artist detail view with provider-aware detail endpoint, full release-history loading, and grouped sections for albums, singles/EPs, and compilations.

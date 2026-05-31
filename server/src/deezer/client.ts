@@ -9,6 +9,8 @@ import {
 const DETAIL_CONCURRENCY = 5
 const DEFAULT_DEEZER_CACHE_TTL_MS = Number(process.env.DEEZER_CACHE_TTL_MS ?? 6 * 60 * 60 * 1000)
 const ARTIST_ALBUMS_MAX_AGE_MS = Number(process.env.DEEZER_ARTIST_ALBUMS_MAX_AGE_MS ?? 5 * 60 * 1000)
+const MAX_DEEZER_RELEASES = Number(process.env.DEEZER_MAX_RELEASES ?? 500)
+const DEEZER_PAGE_LIMIT = 100
 
 interface DeezerSearchResponse {
   data: Array<{
@@ -46,6 +48,8 @@ interface DeezerTrackSearchResponse {
 }
 
 interface DeezerArtistAlbumsResponse {
+  next?: string
+  total?: number
   data: Array<{
     id: number
     title: string
@@ -199,6 +203,10 @@ function buildDeezerCoverUrl(md5: string | undefined, size = 1000): string {
   return `https://e-cdns-images.dzcdn.net/images/cover/${md5}/${size}x${size}-000000-80-0-0.jpg`
 }
 
+function resolveArtistImage(artist: DeezerArtistResponse): string | undefined {
+  return artist.picture_xl ?? artist.picture_big ?? artist.picture_medium ?? artist.picture
+}
+
 function resolveCoverUrl(
   details: Pick<DeezerAlbumDetailResponse, 'cover_xl' | 'cover_big' | 'cover_medium' | 'cover' | 'md5_image'>,
   item: Pick<
@@ -286,16 +294,55 @@ export async function searchDeezerArtists(query: string, limit: number) {
   }))
 }
 
-export async function fetchDeezerArtistReleases(artistId: string, limit: number) {
+export async function fetchDeezerArtistDetail(artistId: string) {
+  const artist = await deezerFetch<DeezerArtistResponse>(`/artist/${encodeURIComponent(artistId)}`)
+
+  return {
+    id: String(artist.id),
+    name: artist.name,
+    genres: [] as string[],
+    imageUrl: resolveArtistImage(artist),
+    externalUrl: artist.link,
+  }
+}
+
+async function fetchPagedDeezerArtistAlbums(artistId: string, requested: number) {
+  const albums: DeezerArtistAlbumsResponse['data'] = []
+  let index = 0
+
+  while (albums.length < requested) {
+    const pageLimit = Math.min(DEEZER_PAGE_LIMIT, requested - albums.length)
+    const page = await deezerFetch<DeezerArtistAlbumsResponse>(
+      `/artist/${encodeURIComponent(artistId)}/albums?index=${index}&limit=${pageLimit}`,
+    )
+    const pageItems = asArray<DeezerArtistAlbumsResponse['data'][number]>(page.data)
+
+    if (!pageItems.length) {
+      break
+    }
+
+    albums.push(...pageItems)
+
+    if (!page.next && pageItems.length < pageLimit) {
+      break
+    }
+
+    index += pageItems.length
+  }
+
+  return albums
+}
+
+export async function fetchDeezerArtistReleases(artistId: string, limit: number | 'all') {
   const concurrency = pLimit(DETAIL_CONCURRENCY)
-  const expandedLimit = Math.min(Math.max(limit * 8, 50), 200)
+  const normalizedLimit = limit === 'all' ? MAX_DEEZER_RELEASES : Math.max(limit, 1)
+  const requested = Math.min(normalizedLimit, MAX_DEEZER_RELEASES)
+  const expandedLimit =
+    limit === 'all' ? requested : Math.min(Math.max(requested * 8, 50), MAX_DEEZER_RELEASES)
   const albumDetailCache = new Map<number, Promise<DeezerAlbumDetailResponse>>()
 
   const artist = await deezerFetch<DeezerArtistResponse>(`/artist/${encodeURIComponent(artistId)}`)
-  const data = await deezerFetch<DeezerArtistAlbumsResponse>(
-    `/artist/${encodeURIComponent(artistId)}/albums?limit=${expandedLimit}`,
-  )
-  const albumItems = asArray<DeezerArtistAlbumsResponse['data'][number]>(data.data)
+  const albumItems = await fetchPagedDeezerArtistAlbums(artistId, expandedLimit)
 
   const rankedCandidates = [...albumItems]
     .sort((a, b) => {
@@ -303,7 +350,7 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number)
       const bDate = Date.parse(b.release_date ?? '1970-01-01')
       return bDate - aDate
     })
-    .slice(0, limit)
+    .slice(0, requested)
 
   const albumAndEpCandidates = albumItems
     .filter((item) => item.record_type === 'album' || item.record_type === 'ep')

@@ -1,4 +1,4 @@
-import type { Artist, ArtistReleasesResponse, SearchArtistsResponse } from '../types'
+import type { Artist, ArtistDetailResponse, ArtistReleasesResponse, SearchArtistsResponse } from '../types'
 
 export type MusicProvider = 'spotify' | 'deezer'
 
@@ -32,7 +32,7 @@ export async function searchArtists(
 
 export async function getArtistReleases(
   artistId: string,
-  limit = 10,
+  limit: number | 'all' = 10,
   provider?: MusicProvider,
 ): Promise<ArtistReleasesResponse> {
   const params = new URLSearchParams({
@@ -45,4 +45,17 @@ export async function getArtistReleases(
 
   const response = await fetch(`/api/artists/${artistId}/releases?${params.toString()}`)
   return parseResponse<ArtistReleasesResponse>(response)
+}
+
+export async function getArtistDetail(artistId: string, provider?: MusicProvider): Promise<ArtistDetailResponse> {
+  const params = new URLSearchParams()
+
+  if (provider) {
+    params.set('provider', provider)
+  }
+
+  const query = params.toString()
+  const endpoint = query ? `/api/artists/${artistId}/detail?${query}` : `/api/artists/${artistId}/detail`
+  const response = await fetch(endpoint)
+  return parseResponse<ArtistDetailResponse>(response)
 }
