@@ -64,7 +64,7 @@ export function Navbar() {
             <select
               value={selectedProvider}
               onChange={(event) => handleProviderChange(event.target.value)}
-              className="rounded-md bg-transparent text-xs font-semibold outline-none"
+              className="dark-field rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-900 outline-none"
             >
               <option value="deezer">{t('provider.deezer')}</option>
               <option value="spotify">{t('provider.spotify')}</option>

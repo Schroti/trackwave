@@ -93,3 +93,18 @@ html.theme-dark .border-slate-300,
 html.theme-dark .border-slate-200 {
   border-color: rgba(130, 154, 177, 0.55) !important;
 }
+
+html.theme-dark .dark-field {
+  background: rgba(20, 33, 46, 0.88) !important;
+  color: #e6eef5 !important;
+  border-color: rgba(130, 154, 177, 0.55) !important;
+}
+
+html.theme-dark .dark-field::placeholder {
+  color: rgba(206, 223, 238, 0.7);
+}
+
+html.theme-dark .dark-field option {
+  background: #142331;
+  color: #e6eef5;
+}
