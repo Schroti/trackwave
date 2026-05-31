@@ -15,7 +15,6 @@ import {
   getArtistReleasesSnapshot,
   isFollowedArtist,
   markFullSyncComplete,
-  markIncrementalSyncComplete,
   removeFollowedArtist,
   setArtistSyncStatus,
   upsertArtistDetail,
@@ -243,23 +242,12 @@ router.get('/artists/:id/releases', async (req, res) => {
     }
 
     if (isFollowedArtist(provider, artistId)) {
-      setArtistSyncStatus(provider, artistId, 'syncing', null)
-
-      try {
-        const syncResult = await syncArtistSnapshot({ provider, artistId })
-        markIncrementalSyncComplete(provider, artistId, syncResult.syncedAt)
-
-        const refreshedReleases = getArtistReleasesSnapshot(provider, artistId, limit)
-        res.json({
-          provider,
-          artistId,
-          releases: refreshedReleases,
-        })
-        return
-      } catch (syncError) {
-        const message = syncError instanceof Error ? syncError.message : 'Unknown sync error'
-        setArtistSyncStatus(provider, artistId, 'error', message)
-      }
+      res.json({
+        provider,
+        artistId,
+        releases: [],
+      })
+      return
     }
 
     const releases =
@@ -298,21 +286,10 @@ router.get('/artists/:id/detail', async (req, res) => {
     }
 
     if (isFollowedArtist(provider, artistId)) {
-      setArtistSyncStatus(provider, artistId, 'syncing', null)
-
-      try {
-        const syncResult = await syncArtistSnapshot({ provider, artistId })
-        markIncrementalSyncComplete(provider, artistId, syncResult.syncedAt)
-
-        res.json({
-          provider,
-          artist: syncResult.artist,
-        })
-        return
-      } catch (syncError) {
-        const message = syncError instanceof Error ? syncError.message : 'Unknown sync error'
-        setArtistSyncStatus(provider, artistId, 'error', message)
-      }
+      res.status(404).json({
+        message: 'Artist detail snapshot not available yet. Trigger sync by re-following or nightly job.',
+      })
+      return
     }
 
     const artist =

@@ -1,3 +1,4 @@
+- Made snapshot/cache reads the default behavior for followed artists in dashboard/detail flows by removing the `snapshotOnly` API parameter and disabling provider fallback for followed-artist GET detail/releases.
 - Enforced Deezer API quota with a hard global 50 requests per 5 seconds throttle and removed redundant client-side Deezer p-limit throttling.
 - Added server-persisted follow sync: newly followed artists now run an immediate full detail+release sync, while existing followed artists are refreshed nightly at 00:15 Europe/Berlin via scheduler.
 - Added initial Trackwave implementation with React frontend, Spotify BFF backend, and single-container Docker deployment setup.
