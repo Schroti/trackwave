@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLanguage } from '../../contexts/LanguageContext'
 import { useArtistStore } from '../../store/useArtistStore'
 import type { Artist } from '../../types'
 import { FollowButton } from '../ui/FollowButton'
@@ -8,10 +9,21 @@ interface ArtistSearchResultProps {
 }
 
 export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
+  const { t } = useLanguage()
   const followArtist = useArtistStore((state) => state.followArtist)
   const unfollowArtist = useArtistStore((state) => state.unfollowArtist)
   const isFollowing = useArtistStore((state) => state.isFollowing(artist.id))
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSyncNotice, setShowSyncNotice] = useState(false)
+  const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimeoutRef.current) {
+        clearTimeout(noticeTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleToggle = async () => {
     if (isSubmitting) {
@@ -23,10 +35,20 @@ export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
     try {
       if (isFollowing) {
         await unfollowArtist(artist.id)
+        setShowSyncNotice(false)
         return
       }
 
       await followArtist(artist)
+      setShowSyncNotice(true)
+
+      if (noticeTimeoutRef.current) {
+        clearTimeout(noticeTimeoutRef.current)
+      }
+
+      noticeTimeoutRef.current = setTimeout(() => {
+        setShowSyncNotice(false)
+      }, 12000)
     } finally {
       setIsSubmitting(false)
     }
@@ -53,7 +75,10 @@ export function ArtistSearchResult({ artist }: ArtistSearchResultProps) {
           <p className="truncate text-sm text-slate-600">{artist.genres.join(', ') || '—'}</p>
         </div>
 
-        <FollowButton isFollowing={isFollowing} isLoading={isSubmitting} onClick={() => void handleToggle()} />
+        <div className="flex flex-col items-end gap-1">
+          <FollowButton isFollowing={isFollowing} isLoading={isSubmitting} onClick={() => void handleToggle()} />
+          {showSyncNotice ? <p className="text-right text-xs text-cyan-700 dark-text-primary">{t('actions.syncInBackground')}</p> : null}
+        </div>
       </div>
     </article>
   )

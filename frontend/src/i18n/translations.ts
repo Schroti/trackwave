@@ -64,6 +64,7 @@ export const translations = {
     actions: {
       follow: 'Follow',
       unfollow: 'Unfollow',
+      syncInBackground: 'Sync is running in the background. Releases will appear shortly.',
     },
     language: {
       switchToGerman: 'Deutsch',
@@ -142,6 +143,7 @@ export const translations = {
     actions: {
       follow: 'Folgen',
       unfollow: 'Entfolgen',
+      syncInBackground: 'Sync läuft im Hintergrund. Releases erscheinen in Kürze.',
     },
     language: {
       switchToGerman: 'Deutsch',

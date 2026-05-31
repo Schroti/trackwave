@@ -1,3 +1,5 @@
+- Added a follow UI notice indicating that artist sync continues in the background after a successful follow action.
+- Made follow requests non-blocking by moving initial artist sync to a background queue, preventing long-running or stuck follow-loading states on large discographies.
 - Restructured dashboard releases into ISO-week groups (newest first), showing the latest 5 weeks by default with a "show 5 older weeks" load-more action.
 - Fixed dark-mode readability for form controls by styling provider dropdown and search input with dark surfaces and accessible text/placeholder colors.
 - Made snapshot/cache reads the default behavior for followed artists in dashboard/detail flows by removing the `snapshotOnly` API parameter and disabling provider fallback for followed-artist GET detail/releases.

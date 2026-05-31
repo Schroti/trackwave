@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ReleaseGrid } from '../components/release/ReleaseGrid'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -10,6 +11,36 @@ export function ArtistDetail() {
   const { t } = useLanguage()
   const { artist, provider, groupedReleases, isFollowing, isLoading, isFollowActionLoading, error, refresh, toggleFollow } =
     useArtistDetail(id)
+  const [showSyncNotice, setShowSyncNotice] = useState(false)
+  const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimeoutRef.current) {
+        clearTimeout(noticeTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleFollowToggle = async () => {
+    const wasFollowing = isFollowing
+    await toggleFollow()
+
+    if (wasFollowing) {
+      setShowSyncNotice(false)
+      return
+    }
+
+    setShowSyncNotice(true)
+
+    if (noticeTimeoutRef.current) {
+      clearTimeout(noticeTimeoutRef.current)
+    }
+
+    noticeTimeoutRef.current = setTimeout(() => {
+      setShowSyncNotice(false)
+    }, 12000)
+  }
 
   if (!id) {
     return <EmptyState title={t('artistDetail.notFound')} />
@@ -48,7 +79,7 @@ export function ArtistDetail() {
             <FollowButton
               isFollowing={isFollowing}
               isLoading={isFollowActionLoading}
-              onClick={() => void toggleFollow()}
+              onClick={() => void handleFollowToggle()}
             />
             <button
               type="button"
@@ -75,6 +106,7 @@ export function ArtistDetail() {
             </Link>
           </div>
         </div>
+        {showSyncNotice ? <p className="mt-3 text-sm font-semibold text-cyan-700 dark-text-primary">{t('actions.syncInBackground')}</p> : null}
       </div>
 
       {isLoading ? <p className="text-sm text-slate-700">{t('artistDetail.loading')}</p> : null}

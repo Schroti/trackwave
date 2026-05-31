@@ -21,6 +21,7 @@ import {
   upsertFollowedArtist,
 } from '../db/syncStore.js'
 import { syncArtistSnapshot } from '../sync/artistSync.js'
+import { enqueueFollowSync } from '../sync/followQueue.js'
 import type { Artist, ProviderId, Release } from '../types.js'
 
 const router = Router()
@@ -321,22 +322,25 @@ router.post('/artists/follow', async (req, res) => {
   try {
     upsertFollowedArtist(artist)
     upsertArtistDetail(artist)
-    setArtistSyncStatus(artist.provider, artist.id, 'syncing', null)
 
-    const syncResult = await syncArtistSnapshot({
-      provider: artist.provider,
-      artistId: artist.id,
-      followedAt: artist.followedAt,
-    })
+    if (!alreadyFollowed) {
+      setArtistSyncStatus(artist.provider, artist.id, 'syncing', null)
+      enqueueFollowSync({
+        provider: artist.provider,
+        artistId: artist.id,
+        followedAt: artist.followedAt,
+      })
+    }
 
-    markFullSyncComplete(artist.provider, artist.id, syncResult.syncedAt)
+    const persistedArtist = getArtistDetailSnapshot(artist.provider, artist.id) ?? artist
+    const releasesCount = getArtistReleasesSnapshot(artist.provider, artist.id, 'all').length
 
-    res.status(alreadyFollowed ? 200 : 201).json({
+    res.status(alreadyFollowed ? 200 : 202).json({
       provider: artist.provider,
       alreadyFollowed,
-      syncedAt: syncResult.syncedAt,
-      artist: syncResult.artist,
-      releasesCount: syncResult.releases.length,
+      syncedAt: null,
+      artist: persistedArtist,
+      releasesCount,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to follow artist.'
