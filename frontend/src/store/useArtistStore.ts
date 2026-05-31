@@ -6,11 +6,9 @@ import { followArtist as followArtistRequest, type MusicProvider, unfollowArtist
 interface ArtistStoreState {
   followedArtists: Artist[]
   selectedProvider: MusicProvider
-  monthsFilter: number
   followArtist: (artist: Artist) => Promise<void>
   unfollowArtist: (artistId: string) => Promise<void>
   isFollowing: (artistId: string) => boolean
-  setMonthsFilter: (months: number) => void
   setSelectedProvider: (provider: MusicProvider) => void
 }
 
@@ -19,7 +17,6 @@ export const useArtistStore = create<ArtistStoreState>()(
     (set, get) => ({
       followedArtists: [],
       selectedProvider: 'deezer',
-      monthsFilter: 6,
       followArtist: async (artist) => {
         const exists = get().followedArtists.some((entry) => entry.id === artist.id)
 
@@ -51,7 +48,6 @@ export const useArtistStore = create<ArtistStoreState>()(
         }))
       },
       isFollowing: (artistId) => get().followedArtists.some((artist) => artist.id === artistId),
-      setMonthsFilter: (months) => set({ monthsFilter: months }),
       setSelectedProvider: (provider) => set({ selectedProvider: provider }),
     }),
     {
@@ -59,7 +55,6 @@ export const useArtistStore = create<ArtistStoreState>()(
       partialize: (state) => ({
         followedArtists: state.followedArtists,
         selectedProvider: state.selectedProvider,
-        monthsFilter: state.monthsFilter,
       }),
     },
   ),

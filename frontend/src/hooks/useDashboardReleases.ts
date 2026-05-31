@@ -4,6 +4,17 @@ import { useArtistStore } from '../store/useArtistStore'
 import type { Release } from '../types'
 
 const MAX_CONCURRENT_REQUESTS = 5
+const INITIAL_VISIBLE_WEEKS = 5
+const LOAD_MORE_WEEKS = 5
+
+export interface DashboardWeekSection {
+  key: string
+  isoWeek: number
+  isoYear: number
+  weekStartUtc: Date
+  weekEndUtc: Date
+  releases: Release[]
+}
 
 async function runWithConcurrency<T>(tasks: Array<() => Promise<T>>, concurrency: number): Promise<T[]> {
   const results: T[] = []
@@ -36,10 +47,40 @@ function releaseDateToTimestamp(releaseDate: string, precision: Release['release
   return Date.parse(releaseDate)
 }
 
+function toNormalizedReleaseDate(releaseDate: string, precision: Release['releaseDatePrecision']): Date {
+  const normalized =
+    precision === 'year' ? `${releaseDate}-01-01` : precision === 'month' ? `${releaseDate}-01` : releaseDate
+  const [yearRaw, monthRaw, dayRaw] = normalized.split('-')
+  const year = Number(yearRaw)
+  const month = Number(monthRaw)
+  const day = Number(dayRaw)
+
+  return new Date(Date.UTC(year, month - 1, day))
+}
+
+function getIsoWeekStartUtc(dateUtc: Date): Date {
+  const result = new Date(dateUtc)
+  const day = result.getUTCDay() || 7
+  result.setUTCDate(result.getUTCDate() - day + 1)
+  result.setUTCHours(0, 0, 0, 0)
+  return result
+}
+
+function getIsoWeekInfo(dateUtc: Date): { week: number; year: number } {
+  const normalized = new Date(Date.UTC(dateUtc.getUTCFullYear(), dateUtc.getUTCMonth(), dateUtc.getUTCDate()))
+  const day = normalized.getUTCDay() || 7
+  normalized.setUTCDate(normalized.getUTCDate() + 4 - day)
+  const year = normalized.getUTCFullYear()
+  const yearStart = new Date(Date.UTC(year, 0, 1))
+  const week = Math.ceil(((normalized.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+
+  return { week, year }
+}
+
 export function useDashboardReleases() {
   const followedArtists = useArtistStore((state) => state.followedArtists)
-  const monthsFilter = useArtistStore((state) => state.monthsFilter)
   const [releases, setReleases] = useState<Release[]>([])
+  const [visibleWeekCount, setVisibleWeekCount] = useState(INITIAL_VISIBLE_WEEKS)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -79,18 +120,67 @@ export function useDashboardReleases() {
     void refresh()
   }, [refresh])
 
-  const filteredReleases = useMemo(() => {
-    const threshold = new Date()
-    threshold.setMonth(threshold.getMonth() - monthsFilter)
+  useEffect(() => {
+    setVisibleWeekCount(INITIAL_VISIBLE_WEEKS)
+  }, [followedArtists])
 
-    return releases.filter((release) => {
-      const timestamp = releaseDateToTimestamp(release.releaseDate, release.releaseDatePrecision)
-      return timestamp >= threshold.getTime()
-    })
-  }, [releases, monthsFilter])
+  const weekSections = useMemo<DashboardWeekSection[]>(() => {
+    const grouped = new Map<string, DashboardWeekSection>()
+
+    for (const release of releases) {
+      const releaseDateUtc = toNormalizedReleaseDate(release.releaseDate, release.releaseDatePrecision)
+      const weekStartUtc = getIsoWeekStartUtc(releaseDateUtc)
+      const weekEndUtc = new Date(weekStartUtc)
+      weekEndUtc.setUTCDate(weekEndUtc.getUTCDate() + 6)
+
+      const iso = getIsoWeekInfo(releaseDateUtc)
+      const key = `${iso.year}-W${String(iso.week).padStart(2, '0')}`
+      const existing = grouped.get(key)
+
+      if (!existing) {
+        grouped.set(key, {
+          key,
+          isoWeek: iso.week,
+          isoYear: iso.year,
+          weekStartUtc,
+          weekEndUtc,
+          releases: [release],
+        })
+        continue
+      }
+
+      existing.releases.push(release)
+    }
+
+    return Array.from(grouped.values())
+      .map((section) => ({
+        ...section,
+        releases: [...section.releases].sort((a, b) => {
+          return (
+            releaseDateToTimestamp(b.releaseDate, b.releaseDatePrecision) -
+            releaseDateToTimestamp(a.releaseDate, a.releaseDatePrecision)
+          )
+        }),
+      }))
+      .sort((a, b) => b.weekStartUtc.getTime() - a.weekStartUtc.getTime())
+  }, [releases])
+
+  const visibleWeekSections = useMemo(() => {
+    return weekSections.slice(0, visibleWeekCount)
+  }, [weekSections, visibleWeekCount])
+
+  const canLoadMoreWeeks = visibleWeekCount < weekSections.length
+
+  const loadMoreWeeks = () => {
+    setVisibleWeekCount((current) => current + LOAD_MORE_WEEKS)
+  }
 
   return {
-    releases: filteredReleases,
+    releases,
+    weekSections: visibleWeekSections,
+    visibleWeekCount,
+    canLoadMoreWeeks,
+    loadMoreWeeks,
     hasFollowedArtists: followedArtists.length > 0,
     isLoading,
     error,

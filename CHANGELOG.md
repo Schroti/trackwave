@@ -1,3 +1,4 @@
+- Restructured dashboard releases into ISO-week groups (newest first), showing the latest 5 weeks by default with a "show 5 older weeks" load-more action.
 - Fixed dark-mode readability for form controls by styling provider dropdown and search input with dark surfaces and accessible text/placeholder colors.
 - Made snapshot/cache reads the default behavior for followed artists in dashboard/detail flows by removing the `snapshotOnly` API parameter and disabling provider fallback for followed-artist GET detail/releases.
 - Enforced Deezer API quota with a hard global 50 requests per 5 seconds throttle and removed redundant client-side Deezer p-limit throttling.
