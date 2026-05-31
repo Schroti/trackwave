@@ -39,5 +39,6 @@ Trackwave is a release tracker for followed artists.
 - Following a new artist triggers an immediate full sync (artist detail + full release history) and stores the snapshot.
 - Existing followed artists are refreshed daily by the built-in scheduler (`SCHEDULER_DAILY_TIME`, default `00:15` in `Europe/Berlin`).
 - Deezer API responses are cached in a persistent SQLite file (`CACHE_DB_PATH`) to reduce quota pressure and survive restarts.
+- Deezer outbound requests are globally hard-throttled to 50 requests per 5 seconds.
 - Artist album lists use a short cache freshness window (`DEEZER_ARTIST_ALBUMS_MAX_AGE_MS`, default 5 minutes) so brand-new releases appear quickly.
 - Artist detail data is available via `/api/artists/:id/detail`, and detail pages load full release history grouped by type (bounded by `DEEZER_MAX_RELEASES` / `SPOTIFY_MAX_RELEASES`).

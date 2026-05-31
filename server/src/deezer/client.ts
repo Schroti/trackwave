@@ -1,16 +1,17 @@
 const DEEZER_API_BASE = 'https://api.deezer.com'
-import pLimit from 'p-limit'
 import {
   getDeezerCachedPayload,
   getDeezerStalePayload,
   setDeezerCachedPayload,
 } from '../cache/deezerCache.js'
 
-const DETAIL_CONCURRENCY = 5
 const DEFAULT_DEEZER_CACHE_TTL_MS = Number(process.env.DEEZER_CACHE_TTL_MS ?? 6 * 60 * 60 * 1000)
 const ARTIST_ALBUMS_MAX_AGE_MS = Number(process.env.DEEZER_ARTIST_ALBUMS_MAX_AGE_MS ?? 5 * 60 * 1000)
 const MAX_DEEZER_RELEASES = Number(process.env.DEEZER_MAX_RELEASES ?? 500)
 const DEEZER_PAGE_LIMIT = 100
+const DEEZER_REQUEST_SLOT_MS = 100
+
+let nextAllowedRequestAt = Date.now()
 
 interface DeezerSearchResponse {
   data: Array<{
@@ -237,6 +238,21 @@ function getFreshCacheMaxAge(path: string): number | undefined {
   return undefined
 }
 
+async function scheduleDeezerRequest<T>(request: () => Promise<T>): Promise<T> {
+  const now = Date.now()
+  const scheduledAt = Math.max(now, nextAllowedRequestAt)
+  nextAllowedRequestAt = scheduledAt + DEEZER_REQUEST_SLOT_MS
+  const waitMs = scheduledAt - now
+
+  if (waitMs > 0) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, waitMs)
+    })
+  }
+
+  return request()
+}
+
 async function deezerFetch<T>(path: string): Promise<T> {
   const cacheKey = path
   const freshMaxAge = getFreshCacheMaxAge(path)
@@ -246,7 +262,7 @@ async function deezerFetch<T>(path: string): Promise<T> {
     return cachedPayload
   }
 
-  const response = await fetch(`${DEEZER_API_BASE}${path}`)
+  const response = await scheduleDeezerRequest(() => fetch(`${DEEZER_API_BASE}${path}`))
 
   if (!response.ok) {
     const stalePayload = getDeezerStalePayload<T>(cacheKey)
@@ -334,7 +350,6 @@ async function fetchPagedDeezerArtistAlbums(artistId: string, requested: number)
 }
 
 export async function fetchDeezerArtistReleases(artistId: string, limit: number | 'all') {
-  const concurrency = pLimit(DETAIL_CONCURRENCY)
   const normalizedLimit = limit === 'all' ? MAX_DEEZER_RELEASES : Math.max(limit, 1)
   const requested = Math.min(normalizedLimit, MAX_DEEZER_RELEASES)
   const expandedLimit =
@@ -359,8 +374,7 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
   const earliestAlbumDateByTrackTitle = new Map<string, string>()
 
   await Promise.all(
-    albumAndEpCandidates.map((item) =>
-      concurrency(async () => {
+    albumAndEpCandidates.map(async (item) => {
         const details = await deezerFetch<DeezerAlbumDetailResponse>(`/album/${item.id}`)
         const albumDate = details.release_date ?? item.release_date
 
@@ -377,12 +391,10 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
           }
         }
       }),
-    ),
   )
 
   const releases = await Promise.all(
-    rankedCandidates.map((item) =>
-      concurrency(async () => {
+    rankedCandidates.map(async (item) => {
         const albumId = Number(item.id)
         let detailsPromise = albumDetailCache.get(albumId)
 
@@ -433,7 +445,6 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
           totalTracks: details.nb_tracks ?? item.nb_tracks ?? 0,
         }
       }),
-    ),
   )
 
   return releases
