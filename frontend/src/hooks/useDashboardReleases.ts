@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getArtistReleases } from '../services/api'
+import { getArtistReleases, refreshArtist } from '../services/api'
 import { useArtistStore } from '../store/useArtistStore'
 import type { Release } from '../types'
 
@@ -82,6 +82,7 @@ export function useDashboardReleases() {
   const [releases, setReleases] = useState<Release[]>([])
   const [visibleWeekCount, setVisibleWeekCount] = useState(INITIAL_VISIBLE_WEEKS)
   const [isLoading, setIsLoading] = useState(false)
+  const [isForceReloading, setIsForceReloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -175,6 +176,38 @@ export function useDashboardReleases() {
     setVisibleWeekCount((current) => current + LOAD_MORE_WEEKS)
   }
 
+  const forceReloadAll = useCallback(async () => {
+    if (!followedArtists.length || isForceReloading) {
+      return
+    }
+
+    setIsForceReloading(true)
+    setError(null)
+
+    try {
+      const tasks = followedArtists.map((artist) => async () => {
+        try {
+          await refreshArtist(artist.id, artist.provider)
+          return null
+        } catch (reloadError) {
+          const reason = reloadError instanceof Error ? reloadError.message : 'Unknown error'
+          return `${artist.name}: ${reason}`
+        }
+      })
+
+      const results = await runWithConcurrency(tasks, 3)
+      const failures = results.filter((value): value is string => value !== null)
+
+      if (failures.length) {
+        setError(`Force reload completed with ${failures.length} error(s). ${failures[0]}`)
+      }
+
+      await refresh()
+    } finally {
+      setIsForceReloading(false)
+    }
+  }, [followedArtists, isForceReloading, refresh])
+
   return {
     releases,
     weekSections: visibleWeekSections,
@@ -183,7 +216,9 @@ export function useDashboardReleases() {
     loadMoreWeeks,
     hasFollowedArtists: followedArtists.length > 0,
     isLoading,
+    isForceReloading,
     error,
     refresh,
+    forceReloadAll,
   }
 }

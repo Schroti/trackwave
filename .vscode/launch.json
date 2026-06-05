@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Trackwave: Debug Backend",
+      "type": "pwa-node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--inspect=9229"
+      ],
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Trackwave: Run Backend (no debug)",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "command": "npm run dev:server"
+    },
+    {
+      "name": "Trackwave: Run Frontend Dev Server",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "command": "npm run dev:frontend"
+    },
+    {
+      "name": "Trackwave: Debug Frontend (Chrome)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "preLaunchTask": "dev:frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Trackwave: Full Stack Debug",
+      "configurations": [
+        "Trackwave: Debug Backend",
+        "Trackwave: Debug Frontend (Chrome)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Trackwave: Full Stack Run (no debug)",
+      "configurations": [
+        "Trackwave: Run Backend (no debug)",
+        "Trackwave: Run Frontend Dev Server"
+      ],
+      "stopAll": true
+    }
+  ]
+}

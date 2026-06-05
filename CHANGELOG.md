@@ -1,3 +1,5 @@
+- Added VS Code Run/Debug setup via .vscode launch/tasks configurations for frontend, backend, and full-stack start profiles.
+- Added a dashboard "Force Reload All" action to manually trigger immediate provider resync for all followed artists when background daily tasks were missed.
 - Added a follow UI notice indicating that artist sync continues in the background after a successful follow action.
 - Made follow requests non-blocking by moving initial artist sync to a background queue, preventing long-running or stuck follow-loading states on large discographies.
 - Restructured dashboard releases into ISO-week groups (newest first), showing the latest 5 weeks by default with a "show 5 older weeks" load-more action.

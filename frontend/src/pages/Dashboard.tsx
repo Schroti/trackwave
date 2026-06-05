@@ -26,7 +26,17 @@ function formatWeekRange(startUtc: Date, endUtc: Date, language: 'de' | 'en'): s
 
 export function Dashboard() {
   const { t, language } = useLanguage()
-  const { weekSections, hasFollowedArtists, isLoading, error, refresh, canLoadMoreWeeks, loadMoreWeeks } =
+  const {
+    weekSections,
+    hasFollowedArtists,
+    isLoading,
+    isForceReloading,
+    error,
+    refresh,
+    forceReloadAll,
+    canLoadMoreWeeks,
+    loadMoreWeeks,
+  } =
     useDashboardReleases()
 
   return (
@@ -37,13 +47,23 @@ export function Dashboard() {
           <p className="mt-1 text-sm text-slate-600">{t('dashboard.subtitle')}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
-        >
-          {t('dashboard.refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+          >
+            {t('dashboard.refresh')}
+          </button>
+          <button
+            type="button"
+            onClick={() => void forceReloadAll()}
+            disabled={isForceReloading || !hasFollowedArtists}
+            className="rounded-full border border-cyan-700 px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isForceReloading ? t('dashboard.forceReloading') : t('dashboard.forceReload')}
+          </button>
+        </div>
       </div>
 
       {isLoading ? <p className="text-sm text-slate-700">{t('dashboard.loading')}</p> : null}
