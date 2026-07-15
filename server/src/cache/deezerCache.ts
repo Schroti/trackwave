@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import Database from 'better-sqlite3'
 
 interface CacheRow {
   payload: string
@@ -12,7 +12,7 @@ const cacheEnabled = process.env.DEEZER_CACHE_ENABLED !== 'false'
 const defaultDbPath = path.resolve(process.cwd(), 'data', 'trackwave-cache.db')
 const dbPath = process.env.CACHE_DB_PATH ?? defaultDbPath
 
-let db: DatabaseSync | null = null
+let db: Database.Database | null = null
 let selectFreshStatement:
   | {
       get: (key: string, now: number) => CacheRow | undefined
@@ -35,7 +35,7 @@ let purgeExpiredStatement:
   | null = null
 let writeCounter = 0
 
-function ensureDb(): DatabaseSync | null {
+function ensureDb(): Database.Database | null {
   if (!cacheEnabled) {
     return null
   }
@@ -47,7 +47,8 @@ function ensureDb(): DatabaseSync | null {
   const dbDir = path.dirname(dbPath)
   mkdirSync(dbDir, { recursive: true })
 
-  db = new DatabaseSync(dbPath)
+  db = new Database(dbPath)
+  db.pragma('journal_mode = WAL')
   db.exec(`
     CREATE TABLE IF NOT EXISTS deezer_cache (
       cache_key TEXT PRIMARY KEY,

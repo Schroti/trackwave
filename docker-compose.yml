@@ -7,6 +7,7 @@ services:
     environment:
       MUSIC_PROVIDER_DEFAULT: ${MUSIC_PROVIDER_DEFAULT:-deezer}
       DEEZER_CACHE_TTL_MS: ${DEEZER_CACHE_TTL_MS:-21600000}
+      TRACKWAVE_DB_PATH: ${TRACKWAVE_DB_PATH:-/app/data/trackwave.db}
       CACHE_DB_PATH: ${CACHE_DB_PATH:-/app/data/trackwave-cache.db}
       DEEZER_MAX_RELEASES: ${DEEZER_MAX_RELEASES:-500}
       SPOTIFY_MAX_RELEASES: ${SPOTIFY_MAX_RELEASES:-500}
