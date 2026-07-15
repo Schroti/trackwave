@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Artist } from '../types'
-import { followArtist as followArtistRequest, type MusicProvider, unfollowArtist as unfollowArtistRequest } from '../services/api'
+import {
+  fetchFollowedArtists,
+  followArtist as followArtistRequest,
+  type MusicProvider,
+  unfollowArtist as unfollowArtistRequest,
+} from '../services/api'
 
 interface ArtistStoreState {
   followedArtists: Artist[]
@@ -10,6 +15,7 @@ interface ArtistStoreState {
   unfollowArtist: (artistId: string) => Promise<void>
   isFollowing: (artistId: string) => boolean
   setSelectedProvider: (provider: MusicProvider) => void
+  hydrate: () => Promise<void>
 }
 
 export const useArtistStore = create<ArtistStoreState>()(
@@ -49,6 +55,14 @@ export const useArtistStore = create<ArtistStoreState>()(
       },
       isFollowing: (artistId) => get().followedArtists.some((artist) => artist.id === artistId),
       setSelectedProvider: (provider) => set({ selectedProvider: provider }),
+      hydrate: async () => {
+        try {
+          const serverArtists = await fetchFollowedArtists()
+          set({ followedArtists: serverArtists })
+        } catch {
+          // Server unreachable: keep whatever localStorage already had.
+        }
+      },
     }),
     {
       name: 'trackwave-artists',

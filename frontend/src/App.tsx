@@ -1,11 +1,19 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { ArtistDetail } from './pages/ArtistDetail'
 import { Dashboard } from './pages/Dashboard'
 import { MyArtists } from './pages/MyArtists'
 import { Search } from './pages/Search'
+import { useArtistStore } from './store/useArtistStore'
 
 function App() {
+  const hydrate = useArtistStore((state) => state.hydrate)
+
+  useEffect(() => {
+    void hydrate()
+  }, [hydrate])
+
   return (
     <Layout>
       <Routes>

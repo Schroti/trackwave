@@ -64,6 +64,12 @@ export async function getArtistDetail(artistId: string, provider?: MusicProvider
   return parseResponse<ArtistDetailResponse>(response)
 }
 
+export async function fetchFollowedArtists(): Promise<Artist[]> {
+  const response = await fetch('/api/artists')
+  const data = await parseResponse<{ artists: Artist[] }>(response)
+  return data.artists
+}
+
 export async function followArtist(artist: Artist): Promise<Artist> {
   const response = await fetch('/api/artists/follow', {
     method: 'POST',
