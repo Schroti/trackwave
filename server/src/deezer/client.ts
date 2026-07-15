@@ -13,6 +13,19 @@ const DEEZER_REQUEST_SLOT_MS = 100
 
 let nextAllowedRequestAt = Date.now()
 
+// Promise.all rejects as soon as the first promise rejects, but any of the other
+// still-pending promises in the batch can reject afterward with nothing attached to
+// observe it — an unhandled rejection that crashes the whole Node process. Attaching a
+// no-op catch to every promise up front keeps that from happening while leaving the
+// original Promise.all rejection behavior intact.
+function guardAgainstUnhandledRejections<T>(promises: Promise<T>[]): Promise<T>[] {
+  for (const promise of promises) {
+    promise.catch(() => {})
+  }
+
+  return promises
+}
+
 interface DeezerSearchResponse {
   data: Array<{
     id: number
@@ -374,7 +387,8 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
   const earliestAlbumDateByTrackTitle = new Map<string, string>()
 
   await Promise.all(
-    albumAndEpCandidates.map(async (item) => {
+    guardAgainstUnhandledRejections(
+      albumAndEpCandidates.map(async (item) => {
         const details = await deezerFetch<DeezerAlbumDetailResponse>(`/album/${item.id}`)
         const albumDate = details.release_date ?? item.release_date
 
@@ -391,9 +405,11 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
           }
         }
       }),
+    ),
   )
 
   const releases = await Promise.all(
+    guardAgainstUnhandledRejections(
     rankedCandidates.map(async (item) => {
         const albumId = Number(item.id)
         let detailsPromise = albumDetailCache.get(albumId)
@@ -445,6 +461,7 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
           totalTracks: details.nb_tracks ?? item.nb_tracks ?? 0,
         }
       }),
+    ),
   )
 
   return releases
