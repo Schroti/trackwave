@@ -13,15 +13,14 @@ import {
 import {
   getArtistDetailSnapshot,
   getArtistReleasesSnapshot,
+  getFollowedArtistsWithDetail,
   isFollowedArtist,
-  markFullSyncComplete,
   removeFollowedArtist,
   setArtistSyncStatus,
   upsertArtistDetail,
   upsertFollowedArtist,
 } from '../db/syncStore.js'
-import { syncArtistSnapshot } from '../sync/artistSync.js'
-import { enqueueFollowSync } from '../sync/followQueue.js'
+import { enqueueSync, runSyncNow } from '../sync/syncQueue.js'
 import type { Artist, ProviderId, Release } from '../types.js'
 
 const router = Router()
@@ -309,6 +308,10 @@ router.get('/artists/:id/detail', async (req, res) => {
   }
 })
 
+router.get('/artists', (_req, res) => {
+  res.json({ artists: getFollowedArtistsWithDetail() })
+})
+
 router.post('/artists/follow', async (req, res) => {
   const artist = toNormalizedFollowArtist(req.body)
 
@@ -324,12 +327,7 @@ router.post('/artists/follow', async (req, res) => {
     upsertArtistDetail(artist)
 
     if (!alreadyFollowed) {
-      setArtistSyncStatus(artist.provider, artist.id, 'syncing', null)
-      enqueueFollowSync({
-        provider: artist.provider,
-        artistId: artist.id,
-        followedAt: artist.followedAt,
-      })
+      enqueueSync(artist.provider, artist.id, 'follow')
     }
 
     const persistedArtist = getArtistDetailSnapshot(artist.provider, artist.id) ?? artist
@@ -373,17 +371,8 @@ router.post('/artists/:id/refresh', async (req, res) => {
   try {
     const artistId = String(req.params.id)
     const provider = getRequestedProvider(req.query.provider)
-    const followed = isFollowedArtist(provider, artistId)
 
-    if (followed) {
-      setArtistSyncStatus(provider, artistId, 'syncing', null)
-    }
-
-    const syncResult = await syncArtistSnapshot({ provider, artistId })
-
-    if (followed) {
-      markFullSyncComplete(provider, artistId, syncResult.syncedAt)
-    }
+    const syncResult = await runSyncNow(provider, artistId)
 
     res.json({
       provider,

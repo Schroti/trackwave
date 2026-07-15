@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import musicRoutes from './routes/music.js'
 import { startNightlyScheduler } from './sync/nightlyScheduler.js'
+import { recoverInterruptedSyncs } from './sync/syncQueue.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 8787)
@@ -28,6 +29,8 @@ if (isProduction) {
     res.sendFile(path.join(frontendDistPath, 'index.html'))
   })
 }
+
+recoverInterruptedSyncs()
 
 app.listen(port, () => {
   startNightlyScheduler()

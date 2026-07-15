@@ -4,7 +4,7 @@ import {
 } from '../spotify/client.js'
 import { fetchDeezerArtistDetail, fetchDeezerArtistReleases } from '../deezer/client.js'
 import type { Artist, ProviderId, Release } from '../types.js'
-import { replaceArtistReleases, upsertArtistDetail } from '../db/syncStore.js'
+import { applySyncResult } from '../db/syncStore.js'
 
 function toSpotifyArtist(item: {
   id: string
@@ -134,8 +134,7 @@ export async function syncArtistSnapshot(options: SyncArtistSnapshotOptions): Pr
       ? await syncSpotifySnapshot(artistId, followedAt)
       : await syncDeezerSnapshot(artistId, followedAt)
 
-  upsertArtistDetail(result.artist)
-  replaceArtistReleases(provider, artistId, result.releases)
+  applySyncResult(provider, artistId, result.artist, result.releases)
 
   return result
 }

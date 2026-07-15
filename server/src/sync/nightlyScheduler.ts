@@ -1,18 +1,11 @@
-import pLimit from 'p-limit'
-import {
-  getFollowedArtistsForSync,
-  markIncrementalSyncComplete,
-  setArtistSyncStatus,
-} from '../db/syncStore.js'
-import { syncArtistSnapshot } from './artistSync.js'
+import { getFollowedArtistsForSync } from '../db/syncStore.js'
+import { enqueueSync } from './syncQueue.js'
 
 const SCHEDULER_ENABLED = process.env.SCHEDULER_ENABLED !== 'false'
 const SCHEDULER_TIMEZONE = process.env.SCHEDULER_TIMEZONE ?? 'Europe/Berlin'
 const SCHEDULER_DAILY_TIME = process.env.SCHEDULER_DAILY_TIME ?? '00:15'
-const SCHEDULER_CONCURRENCY = Math.max(Number(process.env.SCHEDULER_CONCURRENCY ?? 2), 1)
 
 let intervalHandle: NodeJS.Timeout | null = null
-let isRunning = false
 let lastRunDate: string | null = null
 
 function getTimeZoneParts(now: Date, timeZone: string) {
@@ -49,42 +42,11 @@ function parseDailyTime(value: string): { hour: number; minute: number } {
   return { hour, minute }
 }
 
-async function runNightlySync(): Promise<void> {
-  if (isRunning) {
-    return
-  }
+function runNightlySync(): void {
+  const followedArtists = getFollowedArtistsForSync()
 
-  isRunning = true
-
-  try {
-    const followedArtists = getFollowedArtistsForSync()
-
-    if (!followedArtists.length) {
-      return
-    }
-
-    const limiter = pLimit(SCHEDULER_CONCURRENCY)
-
-    await Promise.all(
-      followedArtists.map((item) =>
-        limiter(async () => {
-          setArtistSyncStatus(item.provider, item.artistId, 'syncing', null)
-
-          try {
-            const syncResult = await syncArtistSnapshot({
-              provider: item.provider,
-              artistId: item.artistId,
-            })
-            markIncrementalSyncComplete(item.provider, item.artistId, syncResult.syncedAt)
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown sync error'
-            setArtistSyncStatus(item.provider, item.artistId, 'error', message)
-          }
-        }),
-      ),
-    )
-  } finally {
-    isRunning = false
+  for (const item of followedArtists) {
+    enqueueSync(item.provider, item.artistId, 'nightly')
   }
 }
 
@@ -108,7 +70,7 @@ export function startNightlyScheduler(): void {
     }
 
     lastRunDate = local.dateKey
-    void runNightlySync()
+    runNightlySync()
   }
 
   maybeRun()
