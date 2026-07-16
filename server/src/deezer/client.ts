@@ -13,17 +13,21 @@ const DEEZER_REQUEST_SLOT_MS = 100
 
 let nextAllowedRequestAt = Date.now()
 
-// Promise.all rejects as soon as the first promise rejects, but any of the other
-// still-pending promises in the batch can reject afterward with nothing attached to
-// observe it — an unhandled rejection that crashes the whole Node process. Attaching a
-// no-op catch to every promise up front keeps that from happening while leaving the
-// original Promise.all rejection behavior intact.
-function guardAgainstUnhandledRejections<T>(promises: Promise<T>[]): Promise<T>[] {
-  for (const promise of promises) {
-    promise.catch(() => {})
+// Promise.all rejects as soon as the first promise rejects and stops waiting on the
+// rest, but those still-pending promises keep running in the background and can go on
+// to reject later with nothing left observing them — an unhandled rejection that
+// crashes the whole Node process. Promise.allSettled never abandons a promise, so
+// nothing can reject unobserved; this reproduces Promise.all's "throw the first
+// failure" behavior on top of it once every promise has actually settled.
+async function allOrThrowFirst<T>(promises: Promise<T>[]): Promise<T[]> {
+  const results = await Promise.allSettled(promises)
+  const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+
+  if (firstFailure) {
+    throw firstFailure.reason
   }
 
-  return promises
+  return results.map((result) => (result as PromiseFulfilledResult<T>).value)
 }
 
 interface DeezerSearchResponse {
@@ -386,30 +390,27 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
 
   const earliestAlbumDateByTrackTitle = new Map<string, string>()
 
-  await Promise.all(
-    guardAgainstUnhandledRejections(
-      albumAndEpCandidates.map(async (item) => {
-        const details = await deezerFetch<DeezerAlbumDetailResponse>(`/album/${item.id}`)
-        const albumDate = details.release_date ?? item.release_date
+  await allOrThrowFirst(
+    albumAndEpCandidates.map(async (item) => {
+      const details = await deezerFetch<DeezerAlbumDetailResponse>(`/album/${item.id}`)
+      const albumDate = details.release_date ?? item.release_date
 
-        if (!albumDate || !details.tracks?.data?.length) {
-          return
+      if (!albumDate || !details.tracks?.data?.length) {
+        return
+      }
+
+      for (const track of details.tracks.data) {
+        const key = normalizeTitle(track.title)
+        const existing = earliestAlbumDateByTrackTitle.get(key)
+
+        if (!existing || Date.parse(albumDate) < Date.parse(existing)) {
+          earliestAlbumDateByTrackTitle.set(key, albumDate)
         }
-
-        for (const track of details.tracks.data) {
-          const key = normalizeTitle(track.title)
-          const existing = earliestAlbumDateByTrackTitle.get(key)
-
-          if (!existing || Date.parse(albumDate) < Date.parse(existing)) {
-            earliestAlbumDateByTrackTitle.set(key, albumDate)
-          }
-        }
-      }),
-    ),
+      }
+    }),
   )
 
-  const releases = await Promise.all(
-    guardAgainstUnhandledRejections(
+  const releases = await allOrThrowFirst(
     rankedCandidates.map(async (item) => {
         const albumId = Number(item.id)
         let detailsPromise = albumDetailCache.get(albumId)
@@ -461,7 +462,6 @@ export async function fetchDeezerArtistReleases(artistId: string, limit: number 
           totalTracks: details.nb_tracks ?? item.nb_tracks ?? 0,
         }
       }),
-    ),
   )
 
   return releases
