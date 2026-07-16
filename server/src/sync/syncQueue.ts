@@ -51,11 +51,19 @@ function executeAndTrack(job: SyncJob): Promise<SyncArtistSnapshotResult> {
   })()
 
   inFlight.set(key, promise)
-  promise.finally(() => {
-    if (inFlight.get(key) === promise) {
-      inFlight.delete(key)
-    }
-  })
+
+  // .finally() returns a new promise that rejects too if `promise` does. That
+  // returned promise is only used for the cleanup side effect below and is never
+  // otherwise observed, so without this catch it becomes an unhandled rejection
+  // (crashing the process) even though `promise` itself is properly handled by
+  // whoever awaits the return value of this function.
+  promise
+    .finally(() => {
+      if (inFlight.get(key) === promise) {
+        inFlight.delete(key)
+      }
+    })
+    .catch(() => {})
 
   return promise
 }
