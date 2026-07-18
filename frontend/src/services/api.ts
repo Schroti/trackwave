@@ -100,3 +100,14 @@ export async function refreshArtist(artistId: string, provider: MusicProvider): 
 
   await parseResponse<{ syncedAt: string }>(response)
 }
+
+export interface MusicbrainzStatus {
+  found: boolean
+  mbid?: string
+}
+
+export async function getMusicbrainzStatus(url: string, entity: 'release' | 'artist'): Promise<MusicbrainzStatus> {
+  const params = new URLSearchParams({ url, entity })
+  const response = await fetch(`/api/musicbrainz/status?${params.toString()}`)
+  return parseResponse<MusicbrainzStatus>(response)
+}

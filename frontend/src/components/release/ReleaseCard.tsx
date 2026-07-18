@@ -1,9 +1,14 @@
 import { useLanguage } from '../../contexts/LanguageContext'
+import { useMusicbrainzStatus } from '../../hooks/useMusicbrainzStatus'
 import type { Release } from '../../types'
+import { buildHarmonyReleaseLink } from '../../utils/harmonyLink'
+import { buildMusicbrainzReleaseViewLink } from '../../utils/musicbrainzViewLink'
+import { MusicbrainzLinkButton } from './MusicbrainzLinkButton'
 import { ReleaseTypeTag } from './ReleaseTypeTag'
 
 interface ReleaseCardProps {
   release: Release
+  checkMusicbrainz?: boolean
 }
 
 function buildSearchLink(provider: 'spotify' | 'deezer', release: Release): string {
@@ -28,12 +33,13 @@ function normalizeReleaseDate(value: string, precision: Release['releaseDatePrec
   return value
 }
 
-export function ReleaseCard({ release }: ReleaseCardProps) {
+export function ReleaseCard({ release, checkMusicbrainz = false }: ReleaseCardProps) {
   const { t } = useLanguage()
   const date = new Date(normalizeReleaseDate(release.releaseDate, release.releaseDatePrecision))
   const deezerUrl = release.provider === 'deezer' ? release.externalUrl : buildSearchLink('deezer', release)
   const spotifyUrl = release.provider === 'spotify' ? release.externalUrl : buildSearchLink('spotify', release)
   const hasCover = Boolean(release.coverUrl)
+  const { status: musicbrainzStatus } = useMusicbrainzStatus(release.externalUrl, 'release', checkMusicbrainz)
 
   return (
     <article className="glass-panel rounded-2xl p-4">
@@ -80,6 +86,20 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
           >
             <img src="/icons/deezer.svg" alt="" aria-hidden="true" className="h-5 w-5" />
           </a>
+          {musicbrainzStatus?.found === false ? (
+            <MusicbrainzLinkButton
+              href={buildHarmonyReleaseLink(release)}
+              tooltip={t('musicbrainz.missingReleaseTooltip')}
+              found={false}
+            />
+          ) : null}
+          {musicbrainzStatus?.found === true && musicbrainzStatus.mbid ? (
+            <MusicbrainzLinkButton
+              href={buildMusicbrainzReleaseViewLink(musicbrainzStatus.mbid)}
+              tooltip={t('musicbrainz.foundReleaseTooltip')}
+              found
+            />
+          ) : null}
         </div>
       </div>
     </article>

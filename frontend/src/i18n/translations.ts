@@ -69,6 +69,13 @@ export const translations = {
       spotify: 'Spotify',
       deezer: 'Deezer',
     },
+    musicbrainz: {
+      label: 'MusicBrainz',
+      missingReleaseTooltip: 'Not yet linked in MusicBrainz — click to submit it via Harmony.',
+      missingArtistTooltip: 'Not yet found in MusicBrainz — click to search/create it.',
+      foundReleaseTooltip: 'Already linked in MusicBrainz — click to view it.',
+      foundArtistTooltip: 'Already found in MusicBrainz — click to view it.',
+    },
     actions: {
       follow: 'Follow',
       unfollow: 'Unfollow',
@@ -155,6 +162,13 @@ export const translations = {
     provider: {
       spotify: 'Spotify',
       deezer: 'Deezer',
+    },
+    musicbrainz: {
+      label: 'MusicBrainz',
+      missingReleaseTooltip: 'Noch nicht in MusicBrainz verlinkt — Klicken, um es über Harmony einzureichen.',
+      missingArtistTooltip: 'Noch nicht in MusicBrainz gefunden — Klicken, um zu suchen/anzulegen.',
+      foundReleaseTooltip: 'Bereits in MusicBrainz verlinkt — Klicken, um es anzusehen.',
+      foundArtistTooltip: 'Bereits in MusicBrainz gefunden — Klicken, um es anzusehen.',
     },
     actions: {
       follow: 'Folgen',

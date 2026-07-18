@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { MusicbrainzLinkButton } from '../components/release/MusicbrainzLinkButton'
 import { ReleaseGrid } from '../components/release/ReleaseGrid'
 import { EmptyState } from '../components/ui/EmptyState'
 import { FollowButton } from '../components/ui/FollowButton'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useArtistDetail } from '../hooks/useArtistDetail'
+import { useMusicbrainzStatus } from '../hooks/useMusicbrainzStatus'
+import { buildMusicbrainzArtistSearchLink } from '../utils/musicbrainzSearchLink'
+import { buildMusicbrainzArtistViewLink } from '../utils/musicbrainzViewLink'
 
 export function ArtistDetail() {
   const { id } = useParams<{ id: string }>()
   const { t } = useLanguage()
   const { artist, provider, groupedReleases, isFollowing, isLoading, isFollowActionLoading, error, refresh, toggleFollow } =
     useArtistDetail(id)
+  const { status: artistMusicbrainzStatus } = useMusicbrainzStatus(artist?.externalUrl, 'artist', Boolean(artist))
   const [showSyncNotice, setShowSyncNotice] = useState(false)
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -97,6 +102,22 @@ export function ArtistDetail() {
               >
                 {t('artistDetail.openExternal')}
               </a>
+            ) : null}
+            {artist && artistMusicbrainzStatus?.found === false ? (
+              <MusicbrainzLinkButton
+                href={buildMusicbrainzArtistSearchLink(artist.name)}
+                tooltip={t('musicbrainz.missingArtistTooltip')}
+                found={false}
+                size="pill"
+              />
+            ) : null}
+            {artist && artistMusicbrainzStatus?.found === true && artistMusicbrainzStatus.mbid ? (
+              <MusicbrainzLinkButton
+                href={buildMusicbrainzArtistViewLink(artistMusicbrainzStatus.mbid)}
+                tooltip={t('musicbrainz.foundArtistTooltip')}
+                found
+                size="pill"
+              />
             ) : null}
             <Link
               to="/artists"
