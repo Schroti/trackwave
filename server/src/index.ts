@@ -3,6 +3,7 @@ import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import musicRoutes from './routes/music.js'
+import musicbrainzRoutes from './routes/musicbrainz.js'
 import { startNightlyScheduler } from './sync/nightlyScheduler.js'
 import { recoverInterruptedSyncs } from './sync/syncQueue.js'
 
@@ -18,6 +19,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api', musicRoutes)
+app.use('/api/musicbrainz', musicbrainzRoutes)
 
 if (isProduction) {
   const __filename = fileURLToPath(import.meta.url)
