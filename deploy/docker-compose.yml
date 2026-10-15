@@ -1,0 +1,31 @@
+# Server deployment: runs the published image, no source checkout needed.
+# Place this file next to a .env (see .env.example), then: docker compose up -d
+services:
+  trackwave:
+    image: schroti/trackwave:latest
+    container_name: trackwave
+    # Forwards SIGTERM to node (not PID 1 then), so `docker compose down` stops it right away.
+    init: true
+    ports:
+      - "8787:8787"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Fixed container paths, overriding whatever .env uses for local development.
+      TRACKWAVE_DB_PATH: /app/data/trackwave.db
+      CACHE_DB_PATH: /app/data/trackwave-cache.db
+      PORT: 8787
+      NODE_ENV: production
+    volumes:
+      - trackwave_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  trackwave_data:

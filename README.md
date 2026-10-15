@@ -32,6 +32,15 @@ Trackwave is a release tracker for followed artists.
    - `docker compose up --build -d`
 3. App runs on http://localhost:8787
 
+## Deploying The Published Image
+
+The image is published as `schroti/trackwave` on Docker Hub (`latest` plus commit-hash tags).
+
+- Publish a new version (from this repo): `docker compose build && docker compose push`
+- On the server, only `deploy/docker-compose.yml` and a `.env` are needed:
+  - first start: `docker compose up -d`
+  - update: `docker compose pull && docker compose up -d`
+
 ## Notes
 
 - Deezer is used as default provider to avoid premium-account dependency.

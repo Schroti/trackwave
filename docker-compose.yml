@@ -1,6 +1,8 @@
 services:
   trackwave:
     build: .
+    # Published tag; `docker compose build && docker compose push` updates Docker Hub.
+    image: schroti/trackwave:latest
     container_name: trackwave
     # Forwards SIGTERM to node (not PID 1 then), so `docker compose down` stops it right away.
     init: true
