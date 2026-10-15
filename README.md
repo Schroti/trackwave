@@ -23,9 +23,11 @@ Trackwave is a release tracker for followed artists.
 
 ## Production With Docker
 
-1. Add `.env` file in root.
+1. Add `.env` file in root (copy `.env.example`). It is passed to the container via `env_file`.
    - Deezer default works out of the box
    - Spotify credentials can be added optionally for dual-provider support
+   - set `MUSICBRAINZ_CONTACT` so MusicBrainz doesn't rate-limit your IP
+   - DB paths are fixed to the `trackwave_data` volume (`/app/data`) by `docker-compose.yml`
 2. Build and run:
    - `docker compose up --build -d`
 3. App runs on http://localhost:8787

@@ -148,6 +148,19 @@ export async function runSyncNow(provider: ProviderId, artistId: string): Promis
   throw new Error(`Could not start sync for ${key}: a sync appears to already be in progress.`)
 }
 
+const RETRY_POLL_INTERVAL_MS = 30_000
+let retryTimer: NodeJS.Timeout | null = null
+
+// Failed jobs are re-queued with a future next_attempt_at; pump() otherwise only runs on
+// enqueue or job completion, so poll periodically to pick up retries once they are due.
+export function startSyncRetryTimer(): void {
+  if (retryTimer) {
+    return
+  }
+
+  retryTimer = setInterval(pump, RETRY_POLL_INTERVAL_MS)
+}
+
 export function recoverInterruptedSyncs(): void {
   resetInterruptedSyncJobs()
 

@@ -2,7 +2,7 @@ import { getMusicbrainzCachedPayload, setMusicbrainzCachedPayload } from '../cac
 
 const MUSICBRAINZ_API_BASE = 'https://musicbrainz.org/ws/2'
 const MUSICBRAINZ_REQUEST_SLOT_MS = Number(process.env.MUSICBRAINZ_REQUEST_SLOT_MS ?? 1100)
-const MUSICBRAINZ_USER_AGENT = process.env.MUSICBRAINZ_CONTACT ?? 'Trackwave/1.0 ( contact-not-configured )'
+const MUSICBRAINZ_USER_AGENT = process.env.MUSICBRAINZ_CONTACT || 'Trackwave/1.0 ( contact-not-configured )'
 const MUSICBRAINZ_CACHE_TTL_FOUND_MS = Number(process.env.MUSICBRAINZ_CACHE_TTL_FOUND_MS ?? 30 * 24 * 60 * 60 * 1000)
 const MUSICBRAINZ_CACHE_TTL_MISSING_MS = Number(process.env.MUSICBRAINZ_CACHE_TTL_MISSING_MS ?? 24 * 60 * 60 * 1000)
 

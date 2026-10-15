@@ -82,8 +82,12 @@ function parseReleaseLimit(value: unknown): number | 'all' {
     return 'all'
   }
 
-  const numeric = Number(value ?? 10)
-  return Math.min(Math.max(numeric, 1), 50)
+  return parseBoundedInt(value, 10, 1, 50)
+}
+
+function parseBoundedInt(value: unknown, fallback: number, min: number, max: number): number {
+  const numeric = Math.trunc(Number(value ?? fallback))
+  return Number.isFinite(numeric) ? Math.min(Math.max(numeric, min), max) : fallback
 }
 
 function parseGenres(value: unknown): string[] {
@@ -199,7 +203,6 @@ function toDeezerRelease(item: {
 router.get('/search-artists', async (req, res) => {
   try {
     const query = String(req.query.q ?? '').trim()
-    const limit = Number(req.query.limit ?? 8)
     const provider = getRequestedProvider(req.query.provider)
 
     if (!query) {
@@ -207,7 +210,7 @@ router.get('/search-artists', async (req, res) => {
       return
     }
 
-    const normalizedLimit = Math.min(Math.max(limit, 1), 20)
+    const normalizedLimit = parseBoundedInt(req.query.limit, 8, 1, 20)
     const artists =
       provider === 'spotify'
         ? (await searchSpotifyArtists(query, normalizedLimit)).map(toSpotifyArtist)

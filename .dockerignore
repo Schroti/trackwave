@@ -1,6 +1,10 @@
 **/node_modules
 **/dist
+**/data
 .git
 .gitignore
 .env
+.claude
+.vscode
 README.md
+CHANGELOG.md
